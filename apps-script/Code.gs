@@ -10,7 +10,7 @@ var SAFETY_CONFIG = {
   PORTAL_NAME: 'BALSONS Safety Manager & Work Authorisation Portal',
   VERSION: '1.0.0-sam2026',
   ENV: 'production',
-  DEFAULT_SPREADSHEET_ID: '1so_aH05vVxiUJsIK6VS-n7BpGrHWNgn_5EK7RuA3cuw',
+  DEFAULT_SPREADSHEET_ID: '1SyOGt6HEu6HJCufAbB2_P6BgF6pEppt28J_8cARaOP0',
 
   getSpreadsheetId: function() {
     return PropertiesService.getScriptProperties().getProperty('SAFETY_SPREADSHEET_ID') || this.DEFAULT_SPREADSHEET_ID;

@@ -14,8 +14,11 @@ const BALSONS_SAFETY_CONFIG = {
   VERSION: '1.0.0-sam2026',
   ENV: 'production',
   
+  SPREADSHEET_ID: '1SyOGt6HEu6HJCufAbB2_P6BgF6pEppt28J_8cARaOP0',
+  SPREADSHEET_URL: 'https://docs.google.com/spreadsheets/d/1SyOGt6HEu6HJCufAbB2_P6BgF6pEppt28J_8cARaOP0/edit',
+  
   // Google Apps Script Web App Deployment URL
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw5yErhJIEatQ2JVQRVqHBvdQNeXwgiSCybqJZwuJPxqhEDbFK5EYcI5AdeNHXFojPhrA/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx_-QdCfVxEXScvaqEpiV64py7Jbwr1HdmGpw0qufxFLL5OGhh7NbiwGBQaSF5cSWq3/exec',
   USE_TEXT_PLAIN_TRANSPORT: true,
 
   STORAGE_SESSION_KEY: 'balsons_safety_session',

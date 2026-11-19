@@ -6,7 +6,7 @@
  */
 
 function initSafetyDatabase(targetSpreadsheetId) {
-  var ssId = targetSpreadsheetId || PropertiesService.getScriptProperties().getProperty('SAFETY_SPREADSHEET_ID') || '1so_aH05vVxiUJsIK6VS-n7BpGrHWNgn_5EK7RuA3cuw';
+  var ssId = targetSpreadsheetId || PropertiesService.getScriptProperties().getProperty('SAFETY_SPREADSHEET_ID') || '1SyOGt6HEu6HJCufAbB2_P6BgF6pEppt28J_8cARaOP0';
   if (!ssId) {
     throw new Error('Target Spreadsheet ID not provided. Set SAFETY_SPREADSHEET_ID in Script Properties.');
   }
