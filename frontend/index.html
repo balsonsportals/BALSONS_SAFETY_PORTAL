@@ -48,9 +48,10 @@
       gap: 12px;
     }
     .brand-wrap img {
-      height: 38px;
-      width: auto;
-      object-fit: contain;
+      height: 38px !important;
+      max-height: 38px !important;
+      width: auto !important;
+      object-fit: contain !important;
     }
     .brand-titles h1 {
       font-size: 15px;
@@ -898,7 +899,7 @@
   <!-- Top Enterprise Header -->
   <header>
     <div class="brand-wrap">
-      <img src="assets/images/balsons-logo.png" alt="BALSONS Logo">
+      <img src="assets/images/balsons-logo.png" alt="BALSONS Logo" style="height: 38px !important; max-height: 38px !important; width: auto !important; object-fit: contain !important;">
       <div class="brand-titles">
         <h1 data-i18n="portal_title">BALSONS SAFETY PORTAL</h1>
         <p data-i18n="portal_sub">JTRWF Khordha Project · Work Authorisation System</p>
