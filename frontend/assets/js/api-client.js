@@ -198,6 +198,152 @@ const BalsonsSafetyApi = {
         VerifiedBy: 'Gajendra Rao',
         ClosedDate: '2026-11-15'
       }
+    ],
+    inductions: [
+      {
+        InductionID: 'IND-JTRWF-2026-0001',
+        EmployeeID: 'EMP-2026-0001',
+        FullName: 'Ramesh Kumar',
+        Trade: 'Senior Rigger Lead',
+        Contractor: 'BALSONS HEAVY LIFT & SHIFT',
+        InductionDate: '2026-01-10',
+        ValidUntil: '2027-01-09',
+        SafetyPassNo: 'SP-2026-001',
+        MedicalFitness: 'FIT (Form 31 Certified)',
+        BloodGroup: 'O+',
+        EmergencyContact: '+91 94370 11223',
+        ConductedBy: 'Manoj Kumar (Safety Officer)',
+        Status: 'INDUCTED',
+        ClearanceStatus: 'CLEARED_FOR_WORK',
+        AuthorizedAreas: ['AREA-01', 'AREA-02', 'AREA-03', 'AREA-04'],
+        ActivePermitID: 'PTW-LFT-2026-0048'
+      },
+      {
+        InductionID: 'IND-JTRWF-2026-0002',
+        EmployeeID: 'EMP-2026-0002',
+        FullName: 'Suresh Sharma',
+        Trade: 'Welder 6G (SMAW / GTAW)',
+        Contractor: 'BALSONS FABRICATION WING',
+        InductionDate: '2026-02-15',
+        ValidUntil: '2027-02-14',
+        SafetyPassNo: 'SP-2026-002',
+        MedicalFitness: 'FIT (Form 31 Certified)',
+        BloodGroup: 'B+',
+        EmergencyContact: '+91 94370 22334',
+        ConductedBy: 'Manoj Kumar (Safety Officer)',
+        Status: 'INDUCTED',
+        ClearanceStatus: 'CLEARED_FOR_WORK',
+        AuthorizedAreas: ['AREA-02', 'AREA-04'],
+        ActivePermitID: 'PTW-HOT-2026-0043'
+      },
+      {
+        InductionID: 'IND-JTRWF-2026-0003',
+        EmployeeID: 'EMP-2026-0003',
+        FullName: 'Manoj Patra',
+        Trade: 'Mechanical Fitter / Scaffolder',
+        Contractor: 'BALSONS STRUCTURAL ERECTORS',
+        InductionDate: '2026-03-01',
+        ValidUntil: '2027-02-28',
+        SafetyPassNo: 'SP-2026-003',
+        MedicalFitness: 'FIT (Height Pass Certified)',
+        BloodGroup: 'A+',
+        EmergencyContact: '+91 94370 33445',
+        ConductedBy: 'Manoj Kumar (Safety Officer)',
+        Status: 'INDUCTED',
+        ClearanceStatus: 'CLEARED_FOR_WORK',
+        AuthorizedAreas: ['AREA-01', 'AREA-03'],
+        ActivePermitID: 'PTW-HT-2026-0044'
+      },
+      {
+        InductionID: 'IND-JTRWF-2026-0004',
+        EmployeeID: 'EMP-2026-0004',
+        FullName: 'Bikram Jena',
+        Trade: 'Chief Electrical Technician (HT)',
+        Contractor: 'BALSONS ELECTRICAL SERVICES',
+        InductionDate: '2026-01-20',
+        ValidUntil: '2027-01-19',
+        SafetyPassNo: 'SP-2026-004',
+        MedicalFitness: 'FIT (Dielectric & Visual Certified)',
+        BloodGroup: 'AB+',
+        EmergencyContact: '+91 94370 44556',
+        ConductedBy: 'Manoj Kumar (Safety Officer)',
+        Status: 'INDUCTED',
+        ClearanceStatus: 'CLEARED_FOR_WORK',
+        AuthorizedAreas: ['AREA-04', 'AREA-06'],
+        ActivePermitID: 'PTW-ELE-2026-0046'
+      },
+      {
+        InductionID: 'IND-JTRWF-2026-0005',
+        EmployeeID: 'EMP-2026-0005',
+        FullName: 'Rajesh Mohanty',
+        Trade: 'Hydraulic & Jacking Specialist',
+        Contractor: 'BALSONS HEAVY LIFT & SHIFT',
+        InductionDate: '2026-02-05',
+        ValidUntil: '2027-02-04',
+        SafetyPassNo: 'SP-2026-005',
+        MedicalFitness: 'FIT (Form 31 Certified)',
+        BloodGroup: 'O+',
+        EmergencyContact: '+91 94370 55667',
+        ConductedBy: 'Manoj Kumar (Safety Officer)',
+        Status: 'INDUCTED',
+        ClearanceStatus: 'CLEARED_FOR_WORK',
+        AuthorizedAreas: ['AREA-02'],
+        ActivePermitID: 'PTW-MHI-2026-0047'
+      },
+      {
+        InductionID: 'IND-JTRWF-2026-0006',
+        EmployeeID: 'EMP-2026-0006',
+        FullName: 'Alok Verma',
+        Trade: 'Certified Rigger & Banksman',
+        Contractor: 'BALSONS HEAVY LIFT & SHIFT',
+        InductionDate: '2026-02-18',
+        ValidUntil: '2027-02-17',
+        SafetyPassNo: 'SP-2026-006',
+        MedicalFitness: 'FIT (Form 31 Certified)',
+        BloodGroup: 'B+',
+        EmergencyContact: '+91 94370 66778',
+        ConductedBy: 'Manoj Kumar (Safety Officer)',
+        Status: 'INDUCTED',
+        ClearanceStatus: 'CLEARED_FOR_WORK',
+        AuthorizedAreas: ['AREA-01'],
+        ActivePermitID: 'PTW-LFT-2026-0048'
+      },
+      {
+        InductionID: 'IND-JTRWF-2026-0007',
+        EmployeeID: 'EMP-2026-0007',
+        FullName: 'Deepak Nayak',
+        Trade: 'Helper / General Trainee',
+        Contractor: 'BALSONS CIVIL WING',
+        InductionDate: 'PENDING',
+        ValidUntil: 'PENDING',
+        SafetyPassNo: 'NONE',
+        MedicalFitness: 'Awaiting OHC Check',
+        BloodGroup: 'O-',
+        EmergencyContact: '+91 94370 77889',
+        ConductedBy: 'NONE',
+        Status: 'PENDING_INDUCTION',
+        ClearanceStatus: 'BLOCKED_NO_INDUCTION',
+        AuthorizedAreas: [],
+        ActivePermitID: 'NONE'
+      },
+      {
+        InductionID: 'IND-JTRWF-2026-0008',
+        EmployeeID: 'EMP-2026-0008',
+        FullName: 'Subhash Rao',
+        Trade: 'Heavy Crawler Crane Operator (150T)',
+        Contractor: 'BALSONS HEAVY LIFT & SHIFT',
+        InductionDate: '2026-01-08',
+        ValidUntil: '2027-01-07',
+        SafetyPassNo: 'SP-2026-008',
+        MedicalFitness: 'FIT (Eyesight & Hearing 100%)',
+        BloodGroup: 'A+',
+        EmergencyContact: '+91 94370 88990',
+        ConductedBy: 'Manoj Kumar (Safety Officer)',
+        Status: 'INDUCTED',
+        ClearanceStatus: 'CLEARED_FOR_WORK',
+        AuthorizedAreas: ['AREA-01', 'AREA-02'],
+        ActivePermitID: 'PTW-LFT-2026-0048'
+      }
     ]
   },
 
@@ -207,21 +353,25 @@ const BalsonsSafetyApi = {
   call: async function(action, payload = {}) {
     const actor = BalsonsSafetyAuth.getUser();
 
-    // If online GAS URL is configured, try network call
+    // If online GAS URL is configured, try network call with timeout
     if (BALSONS_SAFETY_CONFIG.APPS_SCRIPT_URL) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
         const response = await fetch(BALSONS_SAFETY_CONFIG.APPS_SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: action, payload: payload, actor: actor }),
+          signal: controller.signal,
           redirect: 'follow'
         });
+        clearTimeout(timeoutId);
         if (response.ok) {
           const res = await response.json();
           if (res.success) return res;
         }
       } catch (e) {
-        console.warn('[BalsonsSafetyApi] Remote call failed, using local fallback:', e.message);
+        // Fallback to local dispatch
       }
     }
 
@@ -230,7 +380,67 @@ const BalsonsSafetyApi = {
   },
 
   _localDispatch: function(action, payload, actor) {
+    payload = payload || {};
     switch (action) {
+      case 'induction.list':
+        let indList = this._localStore.inductions || [];
+        if (payload.status && payload.status !== 'ALL') {
+          indList = indList.filter(i => i.Status === payload.status);
+        }
+        return { success: true, data: { inductions: indList } };
+
+      case 'induction.create':
+        const newInd = {
+          InductionID: 'IND-JTRWF-2026-' + Math.floor(1000 + Math.random() * 9000),
+          EmployeeID: payload.EmployeeID || 'EMP-2026-0007',
+          FullName: payload.FullName || 'Worker',
+          Trade: payload.Trade || 'General Worker',
+          Contractor: payload.Contractor || 'BALSONS HEAVY LIFT & SHIFT',
+          InductionDate: payload.InductionDate || new Date().toISOString().split('T')[0],
+          ValidUntil: payload.ValidUntil || new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
+          SafetyPassNo: payload.SafetyPassNo || ('SP-2026-' + Math.floor(100 + Math.random() * 900)),
+          MedicalFitness: payload.MedicalFitness || 'FIT (Form 31 Certified)',
+          BloodGroup: payload.BloodGroup || 'O+',
+          EmergencyContact: payload.EmergencyContact || '+91 94370 12345',
+          ConductedBy: actor ? actor.fullName : 'Manoj Kumar (Safety Officer)',
+          Status: 'INDUCTED',
+          ClearanceStatus: 'CLEARED_FOR_WORK',
+          AuthorizedAreas: ['AREA-01', 'AREA-02', 'AREA-03', 'AREA-04'],
+          ActivePermitID: 'PTW-GEN-0042'
+        };
+        if (!this._localStore.inductions) this._localStore.inductions = [];
+        this._localStore.inductions.unshift(newInd);
+        return { success: true, data: { induction: newInd, message: 'Safety induction completed and pass issued.' } };
+
+      case 'gate.checkClearance':
+        const empId = (payload.employeeId || 'EMP-2026-0001').trim();
+        const indRecord = (this._localStore.inductions || []).find(i => i.EmployeeID.toLowerCase() === empId.toLowerCase());
+        const activePermits = (this._localStore.permits || []).filter(p => p.Status === 'ISSUED');
+        
+        let verdict = {
+          employeeId: empId,
+          hrStatus: 'ACTIVE',
+          name: indRecord ? indRecord.FullName : (empId === 'EMP-2026-0007' ? 'Deepak Nayak' : 'Worker'),
+          trade: indRecord ? indRecord.Trade : (empId === 'EMP-2026-0007' ? 'Helper / Trainee' : 'General Worker'),
+          contractor: indRecord ? indRecord.Contractor : 'BALSONS HEAVY LIFT & SHIFT',
+          isInducted: indRecord ? (indRecord.Status === 'INDUCTED') : false,
+          safetyPassNo: indRecord ? indRecord.SafetyPassNo : 'NONE',
+          validUntil: indRecord ? indRecord.ValidUntil : 'PENDING',
+          medicalFitness: indRecord ? indRecord.MedicalFitness : 'PENDING',
+          activePermit: activePermits.length > 0 ? activePermits[0] : null,
+          authorizedToEnter: false,
+          gateDecision: 'BLOCKED'
+        };
+
+        if (verdict.isInducted && verdict.medicalFitness.includes('FIT')) {
+          verdict.authorizedToEnter = true;
+          verdict.gateDecision = 'ACCESS_GRANTED';
+        } else {
+          verdict.authorizedToEnter = false;
+          verdict.gateDecision = 'ACCESS_DENIED_NO_INDUCTION';
+        }
+        return { success: true, data: verdict };
+
       case 'system.ping':
         return { success: true, data: { status: 'ONLINE', mode: 'LOCAL_FALLBACK' } };
 

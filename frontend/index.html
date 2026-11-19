@@ -1034,11 +1034,25 @@
         👷 <span data-i18n="nav_manpower_reports">Manpower & Reports</span> <span class="beds-caret">▾</span>
       </button>
       <div class="beds-dropdown-menu" id="menu-nav-manpower">
+        <a class="beds-dropdown-item" data-target="view-induction">
+          <span class="item-icon">🛡️</span>
+          <div class="item-text">
+            <strong>Employee Safety Induction</strong>
+            <small>Worker induction register & safety pass</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-gate-clearance">
+          <span class="item-icon">🔗</span>
+          <div class="item-text">
+            <strong>Gate Clearance & Work Auth Hub</strong>
+            <small>Tri-portal live link (HR + Safety + Gate Entry)</small>
+          </div>
+        </a>
         <a class="beds-dropdown-item" data-target="view-manpower">
           <span class="item-icon">👷</span>
           <div class="item-text">
             <strong data-i18n="nav_manpower">Manpower Competency & Form 31</strong>
-            <small>Skill badges, medical fitness & inductions</small>
+            <small>Skill badges & statutory medical records</small>
           </div>
         </a>
         <a class="beds-dropdown-item" data-target="view-reports">
@@ -1388,6 +1402,143 @@
     <!-- ======================================================== -->
     <!-- VIEW 08: MANPOWER & COMPETENCY                           -->
     <!-- ======================================================== -->
+    <!-- ======================================================== -->
+    <!-- VIEW 08-A: EMPLOYEE SAFETY INDUCTION & WORK CLEARANCE     -->
+    <!-- ======================================================== -->
+    <div id="view-induction" class="beds-view-panel">
+      <!-- Action Toolbar -->
+      <div class="quick-action-bar" style="border-left: 4px solid var(--beds-teal-primary); background: var(--beds-bg-panel); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="font-size: 14.5px; font-weight: 800; color: var(--beds-charcoal-heading);">
+            🛡️ EMPLOYEE SAFETY INDUCTION REGISTER & WORK AUTHORISATION
+          </div>
+          <div style="font-size: 11.5px; color: var(--beds-text-secondary);">
+            JTRWF Khordha Project · Pre-Work Mandatory Safety Induction, Medical Fitness & Working Clearance Passes
+          </div>
+        </div>
+        <div class="action-btn-group" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="beds-btn beds-btn-primary" onclick="BalsonsSafetyApp.openInductionModal()">
+            🛡️ Conduct Safety Induction
+          </button>
+          <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.syncWithHrPortal()">
+            🔄 Sync with HR Master
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div class="beds-card" style="padding: 14px; border-left: 4px solid #059669; background: var(--beds-bg-panel);">
+          <div style="font-size: 11px; font-weight: 700; color: var(--beds-text-secondary); text-transform: uppercase;">Active Inducted Workers</div>
+          <div style="font-size: 22px; font-weight: 800; color: #059669;" id="kpi-inducted-count">142</div>
+          <div style="font-size: 10px; color: #059669;">✓ Cleared for site work</div>
+        </div>
+        <div class="beds-card" style="padding: 14px; border-left: 4px solid #DC2626; background: var(--beds-bg-panel);">
+          <div style="font-size: 11px; font-weight: 700; color: var(--beds-text-secondary); text-transform: uppercase;">Pending Initial Induction</div>
+          <div style="font-size: 22px; font-weight: 800; color: #DC2626;" id="kpi-pending-induction-count">6</div>
+          <div style="font-size: 10px; color: #DC2626;">⛔ Entry strictly blocked at gate</div>
+        </div>
+        <div class="beds-card" style="padding: 14px; border-left: 4px solid var(--beds-teal-primary); background: var(--beds-bg-panel);">
+          <div style="font-size: 11px; font-weight: 700; color: var(--beds-text-secondary); text-transform: uppercase;">Form 31 Medical Fitness</div>
+          <div style="font-size: 22px; font-weight: 800; color: var(--beds-teal-primary);">100%</div>
+          <div style="font-size: 10px; color: var(--beds-text-secondary);">Certified by Project OHC Dr.</div>
+        </div>
+        <div class="beds-card" style="padding: 14px; border-left: 4px solid #D97706; background: var(--beds-bg-panel);">
+          <div style="font-size: 11px; font-weight: 700; color: var(--beds-text-secondary); text-transform: uppercase;">Safety Passes Issued</div>
+          <div style="font-size: 22px; font-weight: 800; color: #D97706;" id="kpi-passes-count">142</div>
+          <div style="font-size: 10px; color: var(--beds-text-secondary);">QR enabled sticker passes</div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div style="background: var(--beds-bg-panel); padding: 10px 14px; border: 1px solid var(--beds-border); border-radius: var(--beds-radius-md); margin-bottom: 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <input type="text" id="induction-search-input" class="form-control" style="width: 260px;" placeholder="Search Worker, Emp ID, Trade..." oninput="BalsonsSafetyApp.filterInductions()">
+        <select id="induction-status-filter" class="form-control" style="width: 180px;" onchange="BalsonsSafetyApp.filterInductions()">
+          <option value="ALL">All Induction Status</option>
+          <option value="INDUCTED">🟢 Inducted (Cleared)</option>
+          <option value="PENDING">🔴 Pending Induction (Blocked)</option>
+          <option value="EXPIRED">⚠️ Expired (Re-test)</option>
+        </select>
+        <select id="induction-trade-filter" class="form-control" style="width: 170px;" onchange="BalsonsSafetyApp.filterInductions()">
+          <option value="ALL">All Trades / Roles</option>
+          <option value="Rigger">Riggers & Rigging Leads</option>
+          <option value="Welder">Welders & Fitters</option>
+          <option value="Electrician">Electricians</option>
+          <option value="Crane">Crane Operators</option>
+          <option value="Helper">Helpers & Standbys</option>
+        </select>
+        <span style="margin-left: auto; font-size: 11.5px; color: var(--beds-text-secondary);" id="induction-count-label">
+          Showing 8 workforce records
+        </span>
+      </div>
+
+      <!-- Induction Master Data Table -->
+      <div class="beds-table-wrapper">
+        <table class="beds-data-table">
+          <thead>
+            <tr>
+              <th>Induction ID</th>
+              <th>Employee ID (HR)</th>
+              <th>Full Name & Trade</th>
+              <th>Contractor / Department</th>
+              <th>Induction Date</th>
+              <th>Valid Until</th>
+              <th>Safety Pass / Sticker #</th>
+              <th>Medical Fitness</th>
+              <th>Work Clearance</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="induction-table-body">
+            <!-- Dynamically populated via BalsonsSafetyApp.loadInductions() -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 08-B: TRI-PORTAL WORK AUTHORISATION & GATE CLEARANCE -->
+    <!-- ======================================================== -->
+    <div id="view-gate-clearance" class="beds-view-panel">
+      <div class="quick-action-bar" style="border-left: 4px solid #059669; background: var(--beds-bg-panel); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="font-size: 14.5px; font-weight: 800; color: var(--beds-charcoal-heading);">
+            🔗 TRI-PORTAL WORK AUTHORISATION & GATE SECURITY TERMINAL
+          </div>
+          <div style="font-size: 11.5px; color: var(--beds-text-secondary);">
+            Synchronized Real-Time Verification: HR Master (Identity) + Safety Portal (Induction & PTW) + Gate Entry (Access)
+          </div>
+        </div>
+        <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.syncWithHrPortal()">
+          🔄 Refresh Tri-Portal Sync
+        </button>
+      </div>
+
+      <!-- Live Employee Clearance Scanner & Inspector -->
+      <div class="beds-card" style="padding: 18px; margin-bottom: 20px; background: var(--beds-bg-panel); border: 1.5px solid var(--beds-border);">
+        <div style="font-size: 13px; font-weight: 800; margin-bottom: 10px; color: var(--beds-charcoal-heading);">
+          🔍 Query Employee Site Work Clearance & Gate Authorization:
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+          <input type="text" id="gate-query-emp-id" class="form-control" style="width: 280px; font-weight: 700; font-family: monospace;" placeholder="Enter Employee ID (e.g. EMP-2026-0001)" value="EMP-2026-0001">
+          <button class="beds-btn beds-btn-primary" onclick="BalsonsSafetyApp.verifyEmployeeForGate()" style="font-weight: 700;">
+            Verify Clearance & Authorisation
+          </button>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <span style="font-size: 11px; color: var(--beds-text-secondary); font-weight: 600;">Quick Demo Tests:</span>
+            <button type="button" class="beds-btn beds-btn-secondary" style="font-size: 10.5px; padding: 3px 8px;" onclick="BalsonsSafetyApp.testEmployeeClearance('EMP-2026-0001')">🟢 EMP-0001 (Ramesh - Cleared)</button>
+            <button type="button" class="beds-btn beds-btn-secondary" style="font-size: 10.5px; padding: 3px 8px;" onclick="BalsonsSafetyApp.testEmployeeClearance('EMP-2026-0007')">🔴 EMP-0007 (Deepak - No Induction)</button>
+            <button type="button" class="beds-btn beds-btn-secondary" style="font-size: 10.5px; padding: 3px 8px;" onclick="BalsonsSafetyApp.testEmployeeClearance('EMP-2026-0002')">🟢 EMP-0002 (Suresh - Cleared Hot)</button>
+          </div>
+        </div>
+
+        <!-- Clearance Verification Verdict Banner -->
+        <div id="gate-clearance-verdict-box" style="margin-top: 14px;">
+          <!-- Injected via JavaScript -->
+        </div>
+      </div>
+    </div>
+
     <div id="view-manpower" class="beds-view-panel">
       <div class="quick-action-bar">
         <div style="font-weight: 700;">Personnel Safety Records, Medical Fitness (Form 31) & Height Pass Status</div>
@@ -1833,5 +1984,97 @@
   <script src="assets/js/api-client.js"></script>
   <script src="assets/js/docx-forms-data.js"></script>
   <script src="assets/js/app.js"></script>
+  <!-- Modal 6: Conduct Safety Induction -->
+  <div class="beds-modal-overlay" id="modal-induction-create">
+    <div class="beds-modal-dialog" style="max-width: 640px;">
+      <div class="beds-modal-header">
+        <h3 class="beds-modal-title">Conduct Worker Safety Induction</h3>
+        <button class="beds-modal-close btn-modal-cancel">&times;</button>
+      </div>
+      <form id="form-create-induction" onsubmit="BalsonsSafetyApp.submitInductionForm(event)">
+        <div class="beds-modal-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label class="form-label">Employee ID (from HR Master)</label>
+              <select class="form-control" id="ind-form-emp-id" onchange="BalsonsSafetyApp.onInductionEmpSelect(this.value)" required>
+                <option value="">-- Select Worker from HR Master --</option>
+                <option value="EMP-2026-0007">EMP-2026-0007 · Deepak Nayak (Helper)</option>
+                <option value="EMP-2026-0001">EMP-2026-0001 · Ramesh Kumar (Rigger Lead)</option>
+                <option value="EMP-2026-0002">EMP-2026-0002 · Suresh Sharma (Welder 6G)</option>
+                <option value="EMP-2026-0003">EMP-2026-0003 · Manoj Patra (Fitter)</option>
+                <option value="EMP-2026-0004">EMP-2026-0004 · Bikram Jena (Electrician HT)</option>
+                <option value="EMP-2026-0005">EMP-2026-0005 · Rajesh Mohanty (Hydraulic Sp.)</option>
+                <option value="EMP-2026-0006">EMP-2026-0006 · Alok Verma (Rigger/Banksman)</option>
+                <option value="EMP-2026-0008">EMP-2026-0008 · Subhash Rao (Crane Operator)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" class="form-control" id="ind-form-name" placeholder="Worker Full Name" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label class="form-label">Trade / Designation</label>
+              <input type="text" class="form-control" id="ind-form-trade" placeholder="e.g. Heavy Rigger / Welder" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contractor / Department</label>
+              <input type="text" class="form-control" id="ind-form-contractor" value="BALSONS HEAVY LIFT & SHIFT" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label class="form-label">Medical Fitness (Form 31)</label>
+              <select class="form-control" id="ind-form-medical">
+                <option value="FIT (Form 31 Certified)">FIT (Certified by Site OHC Dr.)</option>
+                <option value="FIT (Height Work Approved)">FIT (Height & Confined Space Approved)</option>
+                <option value="TEMPORARY_UNFIT">Temporary Unfit (Requires Re-check)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Safety Sticker / Pass #</label>
+              <input type="text" class="form-control" id="ind-form-pass-no" value="SP-2026-007" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="background: var(--beds-bg-page); padding: 10px; border-radius: var(--beds-radius-sm); border: 1px solid var(--beds-border);">
+            <label class="form-label" style="font-weight: 800; margin-bottom: 6px;">Mandatory Safety Induction Topics Covered:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px;">
+              <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked required> <span>JTRWF Site Golden Rules</span></label>
+              <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked required> <span>BALSONS Life-Saving Rules</span></label>
+              <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked required> <span>Mandatory PPE Inspection</span></label>
+              <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked required> <span>Emergency Sirens & Egress</span></label>
+              <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked required> <span>Permit-to-Work (PTW) Scope</span></label>
+              <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked required> <span>Near Miss / Hazard Reporting</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="beds-modal-footer">
+          <button type="button" class="beds-btn beds-btn-secondary btn-modal-cancel">Cancel</button>
+          <button type="submit" class="beds-btn beds-btn-primary">✓ Complete Induction & Issue Pass</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7: Printable Safety Induction Pass & Badge -->
+  <div class="beds-modal-overlay" id="modal-safety-pass-print">
+    <div class="beds-modal-dialog" style="max-width: 520px;">
+      <div class="beds-modal-header">
+        <h3 class="beds-modal-title">Official Safety Induction Pass & Badge</h3>
+        <div class="action-btn-group">
+          <button class="beds-btn beds-btn-sm beds-btn-primary" onclick="window.print()">🖨️ Print Badge</button>
+          <button class="beds-modal-close btn-modal-cancel">&times;</button>
+        </div>
+      </div>
+      <div class="beds-modal-body" id="safety-pass-print-content" style="display: flex; justify-content: center; padding: 20px;">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
