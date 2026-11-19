@@ -12,7 +12,7 @@
     { code: 'safety', name: '🛡️ Safety & PTW Manager', path: '../BALSONS SAFETY MANAGER/frontend/index.html', rootPath: 'BALSONS SAFETY MANAGER/frontend/index.html' },
     { code: 'hr', name: '👥 HR & Dual-Wage Payroll', path: '../BALSONS HR MANAGER/frontend/index.html', rootPath: 'BALSONS HR MANAGER/frontend/index.html' },
     { code: 'gate', name: '🚧 Gate Entry & Turnstile Access', path: '../BALSONS GATE ENTRY MANAGER/frontend/index.html', rootPath: 'BALSONS GATE ENTRY MANAGER/frontend/index.html' },
-    { code: 'store', name: '📦 Store & Rigging Tackles', path: '../BALSONS STORE MANAGER/', rootPath: 'BALSONS STORE MANAGER/' },
+    { code: 'store', name: '📦 Store & Rigging Tackles', path: '../BALSONS STORE MANAGER/frontend/index.html', rootPath: 'BALSONS STORE MANAGER/frontend/index.html' },
     { code: 'launcher', name: '🌐 Central Enterprise Launcher', path: '../../index.html', rootPath: 'index.html' }
   ];
 
