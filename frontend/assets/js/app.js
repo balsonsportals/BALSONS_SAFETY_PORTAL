@@ -57,6 +57,31 @@ const BalsonsSafetyApp = {
   // AUTHENTICATION & USER PROFILE
   // ==========================================
   initAuth: function() {
+    if (window.BalsonsSAMAuth) {
+      BalsonsSAMAuth.renderGlobalSuperAdminBar('safety', (newSession) => {
+        window.location.reload();
+      });
+      const samSession = BalsonsSAMAuth.getSession();
+      if (samSession) {
+        const userDisplay = document.getElementById('header-user-display');
+        const userRoleBadge = document.getElementById('header-role-badge');
+        if (userDisplay) userDisplay.textContent = samSession.fullName;
+        if (userRoleBadge) userRoleBadge.textContent = samSession.role === 'SUPER_ADMIN' ? 'Owner / Super Admin' : samSession.roleInfo.title;
+
+        const switchUserBtn = document.getElementById('btn-switch-user');
+        if (switchUserBtn) {
+          switchUserBtn.addEventListener('click', () => {
+            if (samSession.role === 'SUPER_ADMIN') {
+              BalsonsSAMAuth.openGovernanceConsole('safety');
+            } else {
+              BalsonsSAMAuth.openAccessMatrixModal();
+            }
+          });
+        }
+        return;
+      }
+    }
+
     const user = BalsonsSafetyAuth.getUser();
     const userDisplay = document.getElementById('header-user-display');
     const userRoleBadge = document.getElementById('header-role-badge');
