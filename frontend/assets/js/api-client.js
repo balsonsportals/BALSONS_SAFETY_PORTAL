@@ -269,20 +269,20 @@ const BalsonsSafetyApi = {
         return { success: true, data: { permits: list } };
 
       case 'ptw.create':
-        const tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === payload.templateCode) || BALSONS_SAFETY_CONFIG.PTW_TEMPLATES[0];
+        const tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === (payload.templateCode || payload.TemplateCode)) || BALSONS_SAFETY_CONFIG.PTW_TEMPLATES[0];
         const newPermit = {
-          PermitID: 'PTW-JTRWF-2026-' + Math.floor(1000 + Math.random() * 9000),
+          PermitID: payload.PermitID || payload.permitId || ('PTW-JTRWF-2026-' + Math.floor(1000 + Math.random() * 9000)),
           TemplateCode: tmpl.code,
           Category: tmpl.category,
-          AreaCode: payload.areaCode || 'AREA-01',
-          WorkDescription: payload.workDescription || tmpl.name,
-          Contractor: payload.contractor || 'BALSONS HEAVY LIFT',
-          SupervisorID: actor ? actor.fullName : 'Ramesh Kumar',
-          PlannedStart: payload.plannedStart || new Date().toISOString(),
-          PlannedEnd: payload.plannedEnd || new Date(Date.now() + tmpl.validity * 3600000).toISOString(),
-          RiskLevel: payload.riskLevel || 'HIGH',
-          Status: 'SUBMITTED',
-          IssuedTimestamp: '',
+          AreaCode: payload.areaCode || payload.AreaCode || 'AREA-01',
+          WorkDescription: payload.workDescription || payload.WorkDescription || tmpl.name,
+          Contractor: payload.contractor || payload.Contractor || 'BALSONS HEAVY LIFT & SHIFT',
+          SupervisorID: payload.SupervisorID || (actor ? actor.fullName : 'Ramesh Kumar'),
+          PlannedStart: payload.plannedStart || payload.PlannedStart || new Date().toISOString(),
+          PlannedEnd: payload.plannedEnd || payload.PlannedEnd || new Date(Date.now() + tmpl.validity * 3600000).toISOString(),
+          RiskLevel: payload.riskLevel || payload.RiskLevel || 'HIGH',
+          Status: payload.Status || 'ISSUED',
+          IssuedTimestamp: new Date().toISOString(),
           ClosedTimestamp: '',
           PrerequisitesChecked: JSON.stringify(payload.prerequisites || tmpl.prerequisites)
         };

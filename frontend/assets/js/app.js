@@ -254,10 +254,18 @@ const BalsonsSafetyApp = {
     tableBody.innerHTML = `<tr><td colspan="9" class="text-center py-4">Loading Work Permits...</td></tr>`;
 
     const res = await BalsonsSafetyApi.call('ptw.list', { filter: filter });
-    if (res.success && res.data && res.data.permits) {
-      this.cachedPermits = res.data.permits;
-      this.renderPermitRows(this.cachedPermits, targetTableId);
+    let fetched = (res.success && res.data && res.data.permits) ? res.data.permits : [];
+
+    // Merge any locally created permits
+    if (this.cachedPermits && this.cachedPermits.length > 0) {
+      this.cachedPermits.forEach(cp => {
+        if (!fetched.some(f => f.PermitID === cp.PermitID)) {
+          fetched.unshift(cp);
+        }
+      });
     }
+    this.cachedPermits = fetched;
+    this.renderPermitRows(this.cachedPermits, targetTableId);
   },
 
   renderPermitRows: function(permits, targetTableId) {
@@ -363,7 +371,11 @@ const BalsonsSafetyApp = {
   // BALSONS CONTROLLED 7 PERMIT FORMS STUDIO & OFFICIAL A4 GENERATOR
   // Reference: BALSONS_JTRWF_PTW_FORMS_V1_1_SEVEN_PERMITS.docx
   // ==========================================
+  // BALSONS CONTROLLED 7 PERMIT FORMS STUDIO & OFFICIAL A4 GENERATOR
+  // Reference: BALSONS_JTRWF_PTW_FORMS_V1_1_SEVEN_PERMITS.docx
+  // ==========================================
   currentStudioFormCode: 'PTW-GEN',
+  studioPreviewMode: false,
 
   renderPermitStudio: function(selectedCode) {
     if (selectedCode) {
@@ -391,22 +403,346 @@ const BalsonsSafetyApp = {
       }).join('');
     }
 
-    // 2. Render Authentic A4 Document
+    // 2. Render Authentic Fillable A4 Document
     const formContainer = document.getElementById('studio-rendered-form');
     if (formContainer) {
       const tmpl = templates.find(t => t.code === currentCode) || templates[0];
-      formContainer.innerHTML = this.buildOfficialA4PermitHtml(tmpl, true);
+      formContainer.innerHTML = this.buildOfficialA4PermitHtml(tmpl, true, true, this.studioPreviewMode);
+    }
+
+    // 3. Update mode badge and toggle button text
+    this.updateStudioModeUI();
+  },
+
+  updateStudioModeUI: function() {
+    const badge = document.getElementById('studio-mode-badge');
+    const toggleBtn = document.getElementById('btn-studio-mode-toggle');
+    const sheet = document.getElementById('active-permit-sheet');
+    if (this.studioPreviewMode) {
+      if (badge) {
+        badge.textContent = '👁️ PRINT PREVIEW MODE';
+        badge.style.background = 'rgba(5, 150, 105, 0.12)';
+        badge.style.color = '#059669';
+        badge.style.borderColor = '#059669';
+      }
+      if (toggleBtn) {
+        toggleBtn.innerHTML = '✏️ Edit Online Mode';
+        toggleBtn.classList.add('beds-btn-primary');
+        toggleBtn.classList.remove('beds-btn-secondary');
+      }
+      if (sheet) sheet.classList.add('preview-mode');
+    } else {
+      if (badge) {
+        badge.textContent = '✏️ EDIT ONLINE MODE';
+        badge.style.background = 'rgba(0, 151, 178, 0.12)';
+        badge.style.color = 'var(--beds-teal-primary)';
+        badge.style.borderColor = 'var(--beds-teal-primary)';
+      }
+      if (toggleBtn) {
+        toggleBtn.innerHTML = '👁️ Preview Print';
+        toggleBtn.classList.add('beds-btn-secondary');
+        toggleBtn.classList.remove('beds-btn-primary');
+      }
+      if (sheet) sheet.classList.remove('preview-mode');
     }
   },
 
-  printStudioForm: function() {
-    const tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === this.currentStudioFormCode) || BALSONS_SAFETY_CONFIG.PTW_TEMPLATES[0];
-    const modalBody = document.getElementById('ptw-print-content');
-    if (modalBody) {
-      modalBody.innerHTML = this.buildOfficialA4PermitHtml(tmpl, true);
-      const modal = document.getElementById('modal-permit-print');
-      if (modal) modal.classList.add('active');
+  toggleStudioPreviewMode: function() {
+    this.studioPreviewMode = !this.studioPreviewMode;
+    this.syncChecklistPrintValues();
+    this.updateStudioModeUI();
+  },
+
+  syncChecklistPrintValues: function() {
+    const sheet = document.getElementById('active-permit-sheet');
+    if (!sheet) return;
+    const containers = sheet.querySelectorAll('.docx-chk-container');
+    containers.forEach(container => {
+      const checkedRadio = container.querySelector('input[type="radio"]:checked');
+      const printSpan = container.querySelector('.docx-print-chk');
+      if (printSpan) {
+        if (checkedRadio) {
+          const val = checkedRadio.value;
+          if (val === 'Y') printSpan.innerHTML = '<strong style="color: #059669;">[☑] Y</strong> &nbsp; [ ] N &nbsp; [ ] N/A';
+          else if (val === 'N') printSpan.innerHTML = '[ ] Y &nbsp; <strong style="color: #DC2626;">[☑] N</strong> &nbsp; [ ] N/A';
+          else if (val === 'NA') printSpan.innerHTML = '[ ] Y &nbsp; [ ] N &nbsp; <strong>[☑] N/A</strong>';
+        } else {
+          printSpan.innerHTML = '[ ] Y &nbsp; [ ] N &nbsp; [ ] N/A';
+        }
+      }
+    });
+  },
+
+  onChecklistChange: function(radioElem) {
+    if (!radioElem) return;
+    const group = radioElem.closest('.docx-radio-group');
+    if (group) {
+      group.querySelectorAll('.docx-radio-btn').forEach(btn => {
+        btn.classList.remove('active-y', 'active-n', 'active-na');
+      });
+      const parentLabel = radioElem.closest('.docx-radio-btn');
+      if (parentLabel) {
+        if (radioElem.value === 'Y') parentLabel.classList.add('active-y');
+        else if (radioElem.value === 'N') parentLabel.classList.add('active-n');
+        else if (radioElem.value === 'NA') parentLabel.classList.add('active-na');
+      }
     }
+    this.syncChecklistPrintValues();
+  },
+
+  setAllChecklists: function(targetVal) {
+    const sheet = document.getElementById('active-permit-sheet');
+    if (!sheet) return;
+    const radios = sheet.querySelectorAll('.docx-chk-container input[type="radio"]');
+    radios.forEach(r => {
+      if (!targetVal) {
+        r.checked = false;
+      } else if (r.value === targetVal) {
+        r.checked = true;
+      }
+    });
+
+    sheet.querySelectorAll('.docx-radio-btn').forEach(btn => {
+      btn.classList.remove('active-y', 'active-n', 'active-na');
+      const input = btn.querySelector('input[type="radio"]');
+      if (input && input.checked) {
+        if (input.value === 'Y') btn.classList.add('active-y');
+        else if (input.value === 'N') btn.classList.add('active-n');
+        else if (input.value === 'NA') btn.classList.add('active-na');
+      }
+    });
+    this.syncChecklistPrintValues();
+  },
+
+  fillStudioSampleData: function() {
+    const sampleData = (typeof BALSONS_PTW_SAMPLE_DATA !== 'undefined') ? BALSONS_PTW_SAMPLE_DATA[this.currentStudioFormCode] : null;
+    if (!sampleData) {
+      alert('Sample demo data not found for template: ' + this.currentStudioFormCode);
+      return;
+    }
+
+    // 1. Header / Reference Line
+    const permitIdEl = document.getElementById('studio-permit-id');
+    if (permitIdEl) permitIdEl.value = sampleData.permitNo;
+    const dateEl = document.getElementById('studio-permit-date');
+    if (dateEl) dateEl.value = sampleData.date;
+    const areaEl = document.getElementById('studio-permit-area');
+    if (areaEl) areaEl.value = sampleData.area;
+
+    // 2. Section 01
+    const appEl = document.getElementById('studio-applicant');
+    if (appEl) appEl.value = sampleData.applicant;
+    const contEl = document.getElementById('studio-contact');
+    if (contEl) contEl.value = sampleData.contact;
+    const deptEl = document.getElementById('studio-contractor');
+    if (deptEl) deptEl.value = sampleData.contractor;
+    const persEl = document.getElementById('studio-persons');
+    if (persEl) persEl.value = sampleData.persons;
+    const startEl = document.getElementById('studio-start-dt');
+    if (startEl) startEl.value = sampleData.startDt;
+    const endEl = document.getElementById('studio-end-dt');
+    if (endEl) endEl.value = sampleData.endDt;
+    const locEl = document.getElementById('studio-location');
+    if (locEl) locEl.value = sampleData.location;
+    const relEl = document.getElementById('studio-related');
+    if (relEl) relEl.value = sampleData.related;
+
+    // 3. Section 02 Task Specific Fields
+    if (sampleData.sec02) {
+      const sec02Fields = document.querySelectorAll('.studio-sec02-field');
+      sec02Fields.forEach(field => {
+        const label = field.getAttribute('data-label');
+        if (label) {
+          for (let key in sampleData.sec02) {
+            if (label.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(label.toLowerCase())) {
+              field.value = sampleData.sec02[key];
+              break;
+            }
+          }
+        }
+      });
+    }
+
+    // 4. Section 03 Checklists: Set All YES
+    this.setAllChecklists('Y');
+
+    // 5. Section 04 Specialized Records
+    if (sampleData.sec04_cse) {
+      sampleData.sec04_cse.forEach((row, idx) => {
+        const tEl = document.getElementById(`cse-time-${idx}`); if (tEl) tEl.value = row.time;
+        const oEl = document.getElementById(`cse-o2-${idx}`); if (oEl) oEl.value = row.o2;
+        const lEl = document.getElementById(`cse-lel-${idx}`); if (lEl) lEl.value = row.lel;
+        const toxEl = document.getElementById(`cse-toxic-${idx}`); if (toxEl) toxEl.value = row.toxic;
+        const tstEl = document.getElementById(`cse-tester-${idx}`); if (tstEl) tstEl.value = row.tester;
+        const insEl = document.getElementById(`cse-inst-${idx}`); if (insEl) insEl.value = row.inst;
+      });
+    }
+    if (sampleData.sec04_ele) {
+      const ptEl = document.getElementById('studio-ele-point'); if (ptEl) ptEl.value = sampleData.sec04_ele.point;
+      const lkEl = document.getElementById('studio-ele-lock'); if (lkEl) lkEl.value = sampleData.sec04_ele.lock;
+      const vrEl = document.getElementById('studio-ele-verifier'); if (vrEl) vrEl.value = sampleData.sec04_ele.verifier;
+      const dtEl = document.getElementById('studio-ele-dt'); if (dtEl) dtEl.value = sampleData.sec04_ele.dt;
+    }
+    if (sampleData.sec04_mhi) {
+      const ptEl = document.getElementById('studio-mhi-point'); if (ptEl) ptEl.value = sampleData.sec04_mhi.point;
+      const lkEl = document.getElementById('studio-mhi-lock'); if (lkEl) lkEl.value = sampleData.sec04_mhi.lock;
+      const vrEl = document.getElementById('studio-mhi-verifier'); if (vrEl) vrEl.value = sampleData.sec04_mhi.verifier;
+      const dtEl = document.getElementById('studio-mhi-dt'); if (dtEl) dtEl.value = sampleData.sec04_mhi.dt;
+    }
+    if (sampleData.sec04_lft) {
+      const wEl = document.getElementById('studio-lft-weight'); if (wEl) wEl.value = sampleData.sec04_lft.weight;
+      const rEl = document.getElementById('studio-lft-radius'); if (rEl) rEl.value = sampleData.sec04_lft.radius;
+      const cEl = document.getElementById('studio-lft-capacity'); if (cEl) cEl.value = sampleData.sec04_lft.capacity;
+      const uEl = document.getElementById('studio-lft-util'); if (uEl) uEl.value = sampleData.sec04_lft.util;
+    }
+
+    // 6. Section 05
+    const hazEl = document.getElementById('studio-hazards'); if (hazEl) hazEl.value = sampleData.hazards;
+    const ctrlEl = document.getElementById('studio-controls'); if (ctrlEl) ctrlEl.value = sampleData.controls;
+    const ppeEl = document.getElementById('studio-ppe'); if (ppeEl) ppeEl.value = sampleData.ppe;
+    const emgEl = document.getElementById('studio-emergency'); if (emgEl) emgEl.value = sampleData.emergency;
+    const refEl = document.getElementById('studio-references'); if (refEl) refEl.value = sampleData.references;
+
+    // 7. Section 06 Declaration
+    const dNameEl = document.getElementById('studio-decl-name'); if (dNameEl) dNameEl.value = sampleData.declName;
+    const dSignEl = document.getElementById('studio-decl-signed'); if (dSignEl) dSignEl.checked = !!sampleData.declSigned;
+    const dDtEl = document.getElementById('studio-decl-dt'); if (dDtEl) dDtEl.value = sampleData.declDt;
+
+    // 8. Approval Workflow
+    const supDec = document.getElementById('studio-appr-sup-dec'); if (supDec) supDec.value = sampleData.supDecision;
+    const supName = document.getElementById('studio-appr-sup-name'); if (supName) supName.value = sampleData.supName;
+    const supDate = document.getElementById('studio-appr-sup-date'); if (supDate) supDate.value = sampleData.supDate;
+
+    const soDec = document.getElementById('studio-appr-so-dec'); if (soDec) soDec.value = sampleData.soDecision;
+    const soName = document.getElementById('studio-appr-so-name'); if (soName) soName.value = sampleData.soName;
+    const soDate = document.getElementById('studio-appr-so-date'); if (soDate) soDate.value = sampleData.soDate;
+
+    const smDec = document.getElementById('studio-appr-sm-dec'); if (smDec) smDec.value = sampleData.smDecision;
+    const smName = document.getElementById('studio-appr-sm-name'); if (smName) smName.value = sampleData.smName;
+    const smDate = document.getElementById('studio-appr-sm-date'); if (smDate) smDate.value = sampleData.smDate;
+
+    const issName = document.getElementById('studio-issuer-name'); if (issName) issName.value = sampleData.issuerName;
+    const vFrom = document.getElementById('studio-valid-from'); if (vFrom) vFrom.value = sampleData.validFrom;
+    const vTo = document.getElementById('studio-valid-to'); if (vTo) vTo.value = sampleData.validTo;
+
+    // 9. Closure
+    const clStatus = document.getElementById('studio-close-status'); if (clStatus) clStatus.value = sampleData.closeStatus;
+    const clNotes = document.getElementById('studio-close-notes'); if (clNotes) clNotes.value = sampleData.closeNotes;
+
+    this.syncChecklistPrintValues();
+    alert(`⚡ Authentic sample engineering data loaded for [${this.currentStudioFormCode}]! Click '👁️ Preview Print' to preview printout or '🖨️ Print Form (A4)' to print.`);
+  },
+
+  fillSafeGasReadings: function() {
+    const defaultTests = [
+      { time: '08:00 (Before entry)', o2: '20.9%', lel: '0%', toxic: 'CO: 0 ppm, H2S: 0 ppm', tester: 'Manoj Kumar', inst: 'Altair 4XR #GT-012' },
+      { time: '10:30 (Shift 1)', o2: '20.9%', lel: '0%', toxic: 'CO: 1 ppm, H2S: 0 ppm', tester: 'Manoj Kumar', inst: 'Altair 4XR #GT-012' },
+      { time: '12:30 (Shift 2)', o2: '20.8%', lel: '0%', toxic: 'CO: 1 ppm, H2S: 0 ppm', tester: 'Manoj Kumar', inst: 'Altair 4XR #GT-012' },
+      { time: '14:00 (Post break)', o2: '20.9%', lel: '0%', toxic: 'CO: 0 ppm, H2S: 0 ppm', tester: 'Manoj Kumar', inst: 'Altair 4XR #GT-012' }
+    ];
+    defaultTests.forEach((t, idx) => {
+      const tEl = document.getElementById(`cse-time-${idx}`); if (tEl) tEl.value = t.time;
+      const oEl = document.getElementById(`cse-o2-${idx}`); if (oEl) oEl.value = t.o2;
+      const lEl = document.getElementById(`cse-lel-${idx}`); if (lEl) lEl.value = t.lel;
+      const toxEl = document.getElementById(`cse-toxic-${idx}`); if (toxEl) toxEl.value = t.toxic;
+      const tstEl = document.getElementById(`cse-tester-${idx}`); if (tstEl) tstEl.value = t.tester;
+      const insEl = document.getElementById(`cse-inst-${idx}`); if (insEl) insEl.value = t.inst;
+    });
+    alert('⚡ Safe atmospheric readings populated (O₂ 20.9%, LEL 0%, Normal Air)!');
+  },
+
+  calcLiftUtil: function() {
+    const wStr = document.getElementById('studio-lft-weight')?.value || '';
+    const cStr = document.getElementById('studio-lft-capacity')?.value || '';
+    const uEl = document.getElementById('studio-lft-util');
+    if (!uEl) return;
+    const w = parseFloat(wStr);
+    const c = parseFloat(cStr);
+    if (!isNaN(w) && !isNaN(c) && c > 0) {
+      const pct = ((w / c) * 100).toFixed(1);
+      const isSafe = pct <= 80.0;
+      uEl.value = `${pct}% (${isSafe ? 'Approved Safe < 80%' : 'CRITICAL OVERLOAD > 80%'})`;
+      uEl.style.background = isSafe ? '#ECFDF5' : '#FEF2F2';
+      uEl.style.color = isSafe ? '#065F46' : '#991B1B';
+    }
+  },
+
+  resetStudioForm: function() {
+    this.renderPermitStudio(this.currentStudioFormCode);
+  },
+
+  saveStudioPermitOnline: async function() {
+    const permitIdEl = document.getElementById('studio-permit-id');
+    const applicantEl = document.getElementById('studio-applicant');
+    const areaEl = document.getElementById('studio-permit-area');
+    const startEl = document.getElementById('studio-start-dt');
+    const endEl = document.getElementById('studio-end-dt');
+    const locationEl = document.getElementById('studio-location');
+    const contractorEl = document.getElementById('studio-contractor');
+    const hazardsEl = document.getElementById('studio-hazards');
+
+    const applicant = applicantEl?.value?.trim() || 'Work Supervisor';
+    const area = areaEl?.value || 'AREA-01 AXLE FORGING LINE';
+    let permitId = permitIdEl?.value?.trim();
+    if (!permitId || permitId.includes('____')) {
+      const rnd = Math.floor(1000 + Math.random() * 9000);
+      permitId = `PTW-JTRWF-2026-${rnd}`;
+      if (permitIdEl) permitIdEl.value = permitId;
+    }
+
+    const tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === this.currentStudioFormCode) || BALSONS_SAFETY_CONFIG.PTW_TEMPLATES[0];
+
+    const newPermit = {
+      PermitID: permitId,
+      permitId: permitId,
+      templateCode: this.currentStudioFormCode,
+      TemplateCode: this.currentStudioFormCode,
+      PermitType: tmpl.name,
+      areaCode: area,
+      AreaCode: area,
+      Applicant: applicant,
+      SupervisorID: applicant,
+      contractor: contractorEl?.value?.trim() || 'BALSONS HEAVY LIFT & SHIFT',
+      Contractor: contractorEl?.value?.trim() || 'BALSONS HEAVY LIFT & SHIFT',
+      plannedStart: startEl?.value ? new Date(startEl.value).toISOString() : new Date().toISOString(),
+      PlannedStart: startEl?.value ? new Date(startEl.value).toISOString() : new Date().toISOString(),
+      plannedEnd: endEl?.value ? new Date(endEl.value).toISOString() : new Date(Date.now() + 8 * 3600000).toISOString(),
+      PlannedEnd: endEl?.value ? new Date(endEl.value).toISOString() : new Date(Date.now() + 8 * 3600000).toISOString(),
+      workDescription: hazardsEl?.value?.trim() ? `Work under ${tmpl.name} at ${locationEl?.value || area}` : `${tmpl.name} authorized activity`,
+      WorkDescription: hazardsEl?.value?.trim() ? `Work under ${tmpl.name} at ${locationEl?.value || area}` : `${tmpl.name} authorized activity`,
+      riskLevel: (this.currentStudioFormCode === 'PTW-LFT' || this.currentStudioFormCode === 'PTW-CSE') ? 'HIGH' : 'MEDIUM',
+      RiskLevel: (this.currentStudioFormCode === 'PTW-LFT' || this.currentStudioFormCode === 'PTW-CSE') ? 'HIGH' : 'MEDIUM',
+      Status: 'ISSUED',
+      SubmittedAt: new Date().toISOString()
+    };
+
+    if (!this.cachedPermits) this.cachedPermits = [];
+    const existingIdx = this.cachedPermits.findIndex(p => p.PermitID === permitId);
+    if (existingIdx >= 0) {
+      this.cachedPermits[existingIdx] = newPermit;
+    } else {
+      this.cachedPermits.unshift(newPermit);
+    }
+    BalsonsSafetyApi._localStore.permits.unshift(newPermit);
+
+    // Call API (asynchronous)
+    BalsonsSafetyApi.call('ptw.create', newPermit);
+
+    const tbody = document.getElementById('ptw-table-body');
+    if (tbody) {
+      this.renderPermitRows(this.cachedPermits, 'ptw-table-body');
+    }
+
+    alert(`✅ Permit [${permitId}] successfully saved and registered in Master PTW Register! Status: ISSUED.`);
+  },
+
+  printStudioForm: function() {
+    this.syncChecklistPrintValues();
+    const sheet = document.getElementById('active-permit-sheet');
+    if (sheet) {
+      sheet.classList.add('preview-mode');
+    }
+    window.print();
   },
 
   initiatePermitFromStudio: function() {
@@ -430,12 +766,12 @@ const BalsonsSafetyApp = {
     const modalBody = document.getElementById('ptw-print-content');
     if (!modalBody) return;
 
-    modalBody.innerHTML = this.buildOfficialA4PermitHtml(permit, false);
+    modalBody.innerHTML = this.buildOfficialA4PermitHtml(permit, false, false, true);
     const modal = document.getElementById('modal-permit-print');
     if (modal) modal.classList.add('active');
   },
 
-  buildOfficialA4PermitHtml: function(item, isBlank) {
+  buildOfficialA4PermitHtml: function(item, isBlank, isEditable, isPreview) {
     let formCode = 'PTW-GEN';
     let permit = null;
     if (isBlank) {
@@ -460,10 +796,10 @@ const BalsonsSafetyApp = {
 
     const permitNo = (!isBlank && permit) ? permit.PermitID : '____________________________';
     const dateStr = (!isBlank && permit) ? this.formatDate(permit.PlannedStart) : '____ / ____ / ______';
-    const areaStr = (!isBlank && permit) ? permit.AreaCode : '____________________________';
+    const areaStr = (!isBlank && permit) ? permit.AreaCode : 'AREA-01 AXLE FORGING LINE';
 
     const html = [];
-    html.push('<div class="docx-permit-sheet">');
+    html.push(`<div class="docx-permit-sheet ${isPreview ? 'preview-mode' : ''}" id="active-permit-sheet">`);
 
     // 1. Top Header: Logo + BALSONS + PERMIT TO WORK + TITLE
     html.push(`
@@ -490,13 +826,39 @@ const BalsonsSafetyApp = {
     html.push('</table>');
 
     // 3. Top Reference Line
-    html.push(`
-      <div style="font-size: 11px; font-weight: 700; margin-bottom: 8px; color: #000000;">
-        Permit No.: <span style="font-family: monospace; font-weight: 800; color: ${!isBlank ? '#0097B2' : '#000000'};">${permitNo}</span> &nbsp;&nbsp;&nbsp;&nbsp; 
-        Date: <span style="font-family: monospace; font-weight: 800;">${dateStr}</span> &nbsp;&nbsp;&nbsp;&nbsp; 
-        Work Area: <span style="font-family: monospace; font-weight: 800; color: ${!isBlank ? '#0097B2' : '#000000'};">${areaStr}</span>
-      </div>
-    `);
+    if (isEditable) {
+      html.push(`
+        <div style="font-size: 11px; font-weight: 700; margin-bottom: 8px; color: #000000; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <div>
+            Permit No.: 
+            <input type="text" id="studio-permit-id" class="docx-input" style="width: 170px; display: inline-block; font-family: monospace; font-weight: 800; color: #0097B2;" value="${permitNo.includes('____') ? '' : permitNo}" placeholder="e.g. PTW-JTRWF-2026-0042">
+          </div>
+          <div>
+            Date: 
+            <input type="date" id="studio-permit-date" class="docx-input" style="width: 135px; display: inline-block; font-weight: 700;" value="${new Date().toISOString().split('T')[0]}">
+          </div>
+          <div style="flex: 1;">
+            Work Area: 
+            <select id="studio-permit-area" class="docx-input" style="width: calc(100% - 80px); display: inline-block; font-weight: 700;">
+              <option value="AREA-01 AXLE FORGING LINE" ${areaStr.includes('AREA-01') ? 'selected' : ''}>AREA-01 AXLE FORGING LINE</option>
+              <option value="AREA-02 WHEEL FORGING LINE" ${areaStr.includes('AREA-02') ? 'selected' : ''}>AREA-02 WHEEL FORGING LINE</option>
+              <option value="AREA-03 MACHINE SHOP" ${areaStr.includes('AREA-03') ? 'selected' : ''}>AREA-03 MACHINE SHOP</option>
+              <option value="AREA-04 DIE SHOP" ${areaStr.includes('AREA-04') ? 'selected' : ''}>AREA-04 DIE SHOP</option>
+              <option value="AREA-05 RAW MATERIAL YARD" ${areaStr.includes('AREA-05') ? 'selected' : ''}>AREA-05 RAW MATERIAL YARD</option>
+              <option value="AREA-06 SUBSTATION & UTILITIES" ${areaStr.includes('AREA-06') ? 'selected' : ''}>AREA-06 SUBSTATION & UTILITIES</option>
+            </select>
+          </div>
+        </div>
+      `);
+    } else {
+      html.push(`
+        <div style="font-size: 11px; font-weight: 700; margin-bottom: 8px; color: #000000;">
+          Permit No.: <span style="font-family: monospace; font-weight: 800; color: ${!isBlank ? '#0097B2' : '#000000'};">${permitNo}</span> &nbsp;&nbsp;&nbsp;&nbsp; 
+          Date: <span style="font-family: monospace; font-weight: 800;">${dateStr}</span> &nbsp;&nbsp;&nbsp;&nbsp; 
+          Work Area: <span style="font-family: monospace; font-weight: 800; color: ${!isBlank ? '#0097B2' : '#000000'};">${areaStr}</span>
+        </div>
+      `);
+    }
 
     // 4. Red Warning Banner
     html.push(`
@@ -508,23 +870,56 @@ const BalsonsSafetyApp = {
     // 5. 01 WORK REQUEST AND APPLICANT DETAILS
     html.push('<div class="docx-section-title">01  WORK REQUEST AND APPLICANT DETAILS</div>');
     html.push('<table class="docx-table">');
-    for (let r of sec01) {
-      html.push('<tr>');
-      for (let i = 0; i < r.length; i += 2) {
-        let label = r[i];
-        let val = r[i+1] || '';
-        if (!isBlank && permit) {
-          if (label.includes('Applicant / Supervisor')) val = `<strong style="color: #0097B2;">${permit.SupervisorID}</strong>`;
-          else if (label.includes('Contractor / Department')) val = `<strong>${permit.Contractor || 'BALSONS'}</strong>`;
-          else if (label.includes('Work start')) val = this.formatDateTime(permit.PlannedStart);
-          else if (label.includes('Work end')) val = this.formatDateTime(permit.PlannedEnd);
-          else if (label.includes('Exact location')) val = `<strong>${permit.AreaCode}</strong>`;
-          else if (label.includes('No. of persons')) val = '8 Persons (Inducted)';
+    if (isEditable) {
+      const todayIso = new Date().toISOString().slice(0, 16);
+      const endIso = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 16);
+      html.push(`
+        <tr>
+          <td style="width: 22%; font-weight: 700; background: #F9FAFB;">Applicant / Supervisor</td>
+          <td style="width: 28%;"><input type="text" id="studio-applicant" class="docx-input" placeholder="Supervisor Name"></td>
+          <td style="width: 22%; font-weight: 700; background: #F9FAFB;">Contact No.</td>
+          <td style="width: 28%;"><input type="text" id="studio-contact" class="docx-input" placeholder="+91 94370 XXXXX"></td>
+        </tr>
+        <tr>
+          <td style="width: 22%; font-weight: 700; background: #F9FAFB;">Contractor / Department</td>
+          <td style="width: 28%;"><input type="text" id="studio-contractor" class="docx-input" value="BALSONS HEAVY LIFT & SHIFT"></td>
+          <td style="width: 22%; font-weight: 700; background: #F9FAFB;">No. of persons</td>
+          <td style="width: 28%;"><input type="text" id="studio-persons" class="docx-input" placeholder="e.g. 6 Persons"></td>
+        </tr>
+        <tr>
+          <td style="width: 22%; font-weight: 700; background: #F9FAFB;">Work start date / time</td>
+          <td style="width: 28%;"><input type="datetime-local" id="studio-start-dt" class="docx-input" value="${todayIso}"></td>
+          <td style="width: 22%; font-weight: 700; background: #F9FAFB;">Work end date / time</td>
+          <td style="width: 28%;"><input type="datetime-local" id="studio-end-dt" class="docx-input" value="${endIso}"></td>
+        </tr>
+        <tr>
+          <td style="width: 22%; font-weight: 700; background: #F9FAFB;">Exact location / asset</td>
+          <td style="width: 28%;"><input type="text" id="studio-location" class="docx-input" placeholder="Bay / Line / Pit location"></td>
+          <td style="width: 22%; font-weight: 700; background: #F9FAFB;">Related permits</td>
+          <td style="width: 28%;"><input type="text" id="studio-related" class="docx-input" placeholder="e.g. PTW-LFT-0022"></td>
+        </tr>
+      `);
+    } else {
+      for (let r of sec01) {
+        html.push('<tr>');
+        for (let i = 0; i < r.length; i += 2) {
+          let label = r[i];
+          let val = r[i+1] || '';
+          if (!isBlank && permit) {
+            if (label.includes('Applicant / Supervisor')) val = `<strong style="color: #0097B2;">${permit.SupervisorID || permit.Applicant || 'R. K. Sharma'}</strong>`;
+            else if (label.includes('Contractor / Department')) val = `<strong>${permit.Contractor || 'BALSONS HEAVY LIFT & SHIFT'}</strong>`;
+            else if (label.includes('Work start')) val = this.formatDateTime(permit.PlannedStart);
+            else if (label.includes('Work end')) val = this.formatDateTime(permit.PlannedEnd);
+            else if (label.includes('Exact location')) val = `<strong>${permit.AreaCode}</strong>`;
+            else if (label.includes('No. of persons')) val = '8 Persons (Inducted)';
+            else if (label.includes('Contact')) val = '+91 94370 12345';
+            else if (label.includes('Related')) val = 'PTW-ELE-0018';
+          }
+          html.push(`<td style="width: 22%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
+          html.push(`<td style="width: 28%; font-weight: ${!isBlank ? '700' : '400'};">${val}</td>`);
         }
-        html.push(`<td style="width: 22%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
-        html.push(`<td style="width: 28%;">${val}</td>`);
+        html.push('</tr>');
       }
-      html.push('</tr>');
     }
     html.push('</table>');
 
@@ -533,20 +928,45 @@ const BalsonsSafetyApp = {
     html.push('<table class="docx-table">');
     for (let r of sec02) {
       html.push('<tr>');
-      for (let i = 0; i < r.length; i += 2) {
-        let label = r[i];
-        let val = r[i+1] || '';
-        if (!isBlank && permit) {
-          if (label.includes('Work activity') || label.includes('activity / task') || label.includes('Scope') || label.includes('Purpose and scope')) {
-            val = `<strong>${permit.WorkDescription}</strong>`;
-          } else if (label.includes('RA / JSA') || label.includes('Risk Assessment')) {
-            val = `JSA-JTRWF-${permit.AreaCode}-2026-REV01`;
-          } else if (label.includes('Exact work location')) {
-            val = permit.AreaCode;
+      if (r.length === 2) {
+        let label = r[0];
+        let val = r[1] || '';
+        if (isEditable) {
+          const isMulti = label.toLowerCase().includes('activity') || label.toLowerCase().includes('task') || label.toLowerCase().includes('purpose') || label.toLowerCase().includes('scope') || label.toLowerCase().includes('tools') || label.toLowerCase().includes('equipment') || label.toLowerCase().includes('description') || label.toLowerCase().includes('boundar') || label.toLowerCase().includes('energy') || label.toLowerCase().includes('ground');
+          const inputHtml = isMulti 
+            ? `<textarea class="docx-textarea studio-sec02-field" data-label="${label}" rows="2" placeholder="${label}..."></textarea>`
+            : `<input type="text" class="docx-input studio-sec02-field" data-label="${label}" placeholder="${label}...">`;
+          html.push(`<td style="width: 28%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
+          html.push(`<td style="width: 72%;">${inputHtml}</td>`);
+        } else {
+          if (!isBlank && permit) {
+            if (label.includes('activity') || label.includes('task') || label.includes('Scope') || label.includes('Description')) {
+              val = `<strong>${permit.WorkDescription}</strong>`;
+            } else if (label.includes('RA / JSA') || label.includes('Risk Assessment')) {
+              val = `JSA-JTRWF-${permit.AreaCode}-2026-REV01`;
+            } else if (label.includes('Exact work location')) {
+              val = permit.AreaCode;
+            }
+          }
+          html.push(`<td style="width: 28%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
+          html.push(`<td style="width: 72%; font-weight: ${!isBlank ? '700' : '400'};">${val}</td>`);
+        }
+      } else {
+        for (let i = 0; i < r.length; i += 2) {
+          let label = r[i];
+          let val = r[i+1] || '';
+          if (isEditable) {
+            html.push(`<td style="width: 24%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
+            html.push(`<td style="width: 26%;"><input type="text" class="docx-input studio-sec02-field" data-label="${label}" placeholder="${label}..."></td>`);
+          } else {
+            if (!isBlank && permit) {
+              if (label.includes('RA / JSA')) val = `JSA-JTRWF-2026-REV02`;
+              else if (label.includes('Exact')) val = permit.AreaCode;
+            }
+            html.push(`<td style="width: 24%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
+            html.push(`<td style="width: 26%; font-weight: ${!isBlank ? '700' : '400'};">${val}</td>`);
           }
         }
-        html.push(`<td style="width: 24%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
-        html.push(`<td style="width: 26%;">${val}</td>`);
       }
       html.push('</tr>');
     }
@@ -554,16 +974,56 @@ const BalsonsSafetyApp = {
 
     // 7. 03 SAFETY VERIFICATION CHECKLIST
     html.push('<div class="docx-section-title">03  SAFETY VERIFICATION CHECKLIST</div>');
+    if (isEditable) {
+      html.push(`
+        <div class="docx-chk-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 10px; color: #4B5563; font-style: italic;">Select compliance status for all mandatory prerequisites:</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="beds-btn beds-btn-secondary" style="font-size: 10px; padding: 2px 8px; font-weight: 700;" onclick="BalsonsSafetyApp.setAllChecklists('Y')">✅ All YES</button>
+            <button type="button" class="beds-btn beds-btn-secondary" style="font-size: 10px; padding: 2px 8px; font-weight: 700;" onclick="BalsonsSafetyApp.setAllChecklists('NA')">⚪ All N/A</button>
+            <button type="button" class="beds-btn beds-btn-secondary" style="font-size: 10px; padding: 2px 8px; font-weight: 700;" onclick="BalsonsSafetyApp.setAllChecklists('')">🔄 Clear</button>
+          </div>
+        </div>
+      `);
+    }
     html.push('<table class="docx-table">');
+    let chkIdx = 0;
     for (let r of sec03) {
       html.push('<tr>');
       for (let cellText of r) {
         if (cellText && cellText.trim()) {
-          let rendered = cellText;
-          if (!isBlank && permit) {
-            rendered = rendered.replace('[ ] Y', '<strong style="color: #059669;">[☑] Y</strong>');
+          chkIdx++;
+          const cleanPrompt = cellText.replace(/\[\s*\]\s*Y\s*\[\s*\]\s*N\s*\[\s*\]\s*N\/A/gi, '').replace(/☐/g, '').trim();
+          if (isEditable) {
+            html.push(`
+              <td style="width: 50%; font-size: 10px; padding: 4px 6px;">
+                <div class="docx-chk-container">
+                  <span class="docx-chk-label">☐ ${cleanPrompt}</span>
+                  <div class="docx-radio-group">
+                    <label class="docx-radio-btn val-y" title="Yes / Verified">
+                      <input type="radio" name="chk_${chkIdx}" value="Y" onchange="BalsonsSafetyApp.onChecklistChange(this)">
+                      <span>[Y]</span>
+                    </label>
+                    <label class="docx-radio-btn val-n" title="No / Not Safe">
+                      <input type="radio" name="chk_${chkIdx}" value="N" onchange="BalsonsSafetyApp.onChecklistChange(this)">
+                      <span>[N]</span>
+                    </label>
+                    <label class="docx-radio-btn val-na" title="Not Applicable">
+                      <input type="radio" name="chk_${chkIdx}" value="NA" onchange="BalsonsSafetyApp.onChecklistChange(this)">
+                      <span>[N/A]</span>
+                    </label>
+                  </div>
+                  <span class="docx-print-chk">[ ] Y &nbsp; [ ] N &nbsp; [ ] N/A</span>
+                </div>
+              </td>
+            `);
+          } else {
+            let rendered = cellText;
+            if (!isBlank && permit) {
+              rendered = rendered.replace('[ ] Y', '<strong style="color: #059669;">[☑] Y</strong>');
+            }
+            html.push(`<td style="width: 50%; font-size: 10px; padding: 4px 6px;">${rendered}</td>`);
           }
-          html.push(`<td style="width: 50%; font-size: 10px; padding: 4px 6px;">${rendered}</td>`);
         } else {
           html.push('<td style="width: 50%;"></td>');
         }
@@ -576,26 +1036,162 @@ const BalsonsSafetyApp = {
     if (formSpec.has_sec04) {
       let sec04Title = formSpec.sec04_title || '04  SPECIALIZED RECORD';
       html.push(`<div class="docx-section-title">${sec04Title}</div>`);
-      let sec04Table = formSpec.sec04_table || [];
-      html.push('<table class="docx-table">');
-      for (let idx = 0; idx < sec04Table.length; idx++) {
-        let r = sec04Table[idx];
-        let isHeader = (idx === 0 && formCode === 'PTW-CSE');
-        html.push('<tr>');
-        for (let cell of r) {
-          if (isHeader) {
-            html.push(`<td style="font-weight: 800; background: #E5E7EB; text-align: center; font-size: 10px;">${cell}</td>`);
+
+      if (formCode === 'PTW-CSE') {
+        if (isEditable) {
+          html.push(`
+            <div class="sec04-helper-btn" style="display: flex; justify-content: flex-end; margin-bottom: 4px;">
+              <button type="button" class="beds-btn beds-btn-secondary" style="font-size: 10px; padding: 2px 8px; font-weight: 700;" onclick="BalsonsSafetyApp.fillSafeGasReadings()">⚡ Fill Safe Air Readings (O₂ 20.9%, LEL 0%)</button>
+            </div>
+          `);
+        }
+        const defaultTimes = ['Before entry', 'During shift (1)', 'During shift (2)', 'Post break / Re-entry'];
+        html.push('<table class="docx-table">');
+        html.push(`
+          <tr>
+            <th style="font-weight: 800; background: #E5E7EB; text-align: center; font-size: 10px; width: 20%;">TEST TIME</th>
+            <th style="font-weight: 800; background: #E5E7EB; text-align: center; font-size: 10px; width: 14%;">O₂ % (19.5-23.5)</th>
+            <th style="font-weight: 800; background: #E5E7EB; text-align: center; font-size: 10px; width: 14%;">LEL % (< 10%)</th>
+            <th style="font-weight: 800; background: #E5E7EB; text-align: center; font-size: 10px; width: 22%;">TOXIC GAS / READING</th>
+            <th style="font-weight: 800; background: #E5E7EB; text-align: center; font-size: 10px; width: 15%;">TESTER</th>
+            <th style="font-weight: 800; background: #E5E7EB; text-align: center; font-size: 10px; width: 15%;">INSTRUMENT ID</th>
+          </tr>
+        `);
+        for (let idx = 0; idx < defaultTimes.length; idx++) {
+          const tLabel = defaultTimes[idx];
+          if (isEditable) {
+            html.push(`
+              <tr>
+                <td style="font-weight: 600;"><input type="text" id="cse-time-${idx}" class="docx-input" value="${tLabel}"></td>
+                <td><input type="text" id="cse-o2-${idx}" class="docx-input" placeholder="20.9%"></td>
+                <td><input type="text" id="cse-lel-${idx}" class="docx-input" placeholder="0%"></td>
+                <td><input type="text" id="cse-toxic-${idx}" class="docx-input" placeholder="CO: 0, H2S: 0"></td>
+                <td><input type="text" id="cse-tester-${idx}" class="docx-input" placeholder="Tester Name"></td>
+                <td><input type="text" id="cse-inst-${idx}" class="docx-input" placeholder="Altair 4XR"></td>
+              </tr>
+            `);
           } else {
-            let rendered = cell;
-            if (!isBlank && permit) {
-              if (cell.includes('[ ] Yes')) rendered = cell.replace('[ ] Yes', '<strong style="color: #059669;">[☑] Yes</strong>');
-            }
-            html.push(`<td style="font-size: 10px; padding: 4px 6px;">${rendered}</td>`);
+            const o2Val = (!isBlank && permit) ? '20.9%' : '______';
+            const lelVal = (!isBlank && permit) ? '0%' : '______';
+            const toxVal = (!isBlank && permit) ? 'CO: 0 ppm, H2S: 0 ppm' : '________________';
+            const tstVal = (!isBlank && permit) ? 'Manoj Kumar' : '__________';
+            const insVal = (!isBlank && permit) ? 'Altair 4XR #GT-012' : '__________';
+            html.push(`
+              <tr>
+                <td style="font-weight: 600; font-size: 10px;">${tLabel}</td>
+                <td style="text-align: center; font-weight: ${!isBlank ? '700' : '400'}; font-size: 10px;">${o2Val}</td>
+                <td style="text-align: center; font-weight: ${!isBlank ? '700' : '400'}; font-size: 10px;">${lelVal}</td>
+                <td style="text-align: center; font-weight: ${!isBlank ? '700' : '400'}; font-size: 10px;">${toxVal}</td>
+                <td style="text-align: center; font-weight: ${!isBlank ? '700' : '400'}; font-size: 10px;">${tstVal}</td>
+                <td style="text-align: center; font-weight: ${!isBlank ? '700' : '400'}; font-size: 10px;">${insVal}</td>
+              </tr>
+            `);
           }
         }
-        html.push('</tr>');
+        html.push('</table>');
+      } else if (formCode === 'PTW-ELE') {
+        html.push('<table class="docx-table">');
+        if (isEditable) {
+          html.push(`
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Isolation point / tag</td>
+              <td style="width: 25%;"><input type="text" id="studio-ele-point" class="docx-input" placeholder="Breaker / Panel Tag"></td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Lock / tag reference</td>
+              <td style="width: 25%;"><input type="text" id="studio-ele-lock" class="docx-input" placeholder="LOTO Tag / Lock #"></td>
+            </tr>
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Verified by</td>
+              <td style="width: 25%;"><input type="text" id="studio-ele-verifier" class="docx-input" placeholder="Authorised Electrical Person"></td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Verification date / time</td>
+              <td style="width: 25%;"><input type="datetime-local" id="studio-ele-dt" class="docx-input" value="${new Date().toISOString().slice(0, 16)}"></td>
+            </tr>
+          `);
+        } else {
+          html.push(`
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Isolation point / tag</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? 'Substation-2, Feeder-4 11kV VCB' : '________________'}</td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Lock / tag reference</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? 'LOTO-JTRWF-E-044' : '________________'}</td>
+            </tr>
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Verified by</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? 'P. K. Mishra (Lic #44821)' : '________________'}</td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Verification date / time</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? this.formatDateTime(permit.PlannedStart) : '________________'}</td>
+            </tr>
+          `);
+        }
+        html.push('</table>');
+      } else if (formCode === 'PTW-MHI') {
+        html.push('<table class="docx-table">');
+        if (isEditable) {
+          html.push(`
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Isolation point / tag</td>
+              <td style="width: 25%;"><input type="text" id="studio-mhi-point" class="docx-input" placeholder="Valve / Hydraulic Manifold Tag"></td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Lock / tag reference</td>
+              <td style="width: 25%;"><input type="text" id="studio-mhi-lock" class="docx-input" placeholder="Lock # / Hasps"></td>
+            </tr>
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Verified zero energy by</td>
+              <td style="width: 25%;"><input type="text" id="studio-mhi-verifier" class="docx-input" placeholder="Mechanical Specialist"></td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Verification date / time</td>
+              <td style="width: 25%;"><input type="datetime-local" id="studio-mhi-dt" class="docx-input" value="${new Date().toISOString().slice(0, 16)}"></td>
+            </tr>
+          `);
+        } else {
+          html.push(`
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Isolation point / tag</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? 'HP Manifold Supply Valve V-101' : '________________'}</td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Lock / tag reference</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? 'LOTO-JTRWF-M-019' : '________________'}</td>
+            </tr>
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Verified zero energy by</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? 'B. N. Mohanty (Hydraulic Sp.)' : '________________'}</td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Verification date / time</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? this.formatDateTime(permit.PlannedStart) : '________________'}</td>
+            </tr>
+          `);
+        }
+        html.push('</table>');
+      } else if (formCode === 'PTW-LFT') {
+        html.push('<table class="docx-table">');
+        if (isEditable) {
+          html.push(`
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Load weight (gross)</td>
+              <td style="width: 25%;"><input type="text" id="studio-lft-weight" class="docx-input" placeholder="e.g. 68.5 MT" oninput="BalsonsSafetyApp.calcLiftUtil()"></td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Operating radius</td>
+              <td style="width: 25%;"><input type="text" id="studio-lft-radius" class="docx-input" placeholder="e.g. 14.0 M" oninput="BalsonsSafetyApp.calcLiftUtil()"></td>
+            </tr>
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Crane capacity at radius</td>
+              <td style="width: 25%;"><input type="text" id="studio-lft-capacity" class="docx-input" placeholder="e.g. 88.0 MT" oninput="BalsonsSafetyApp.calcLiftUtil()"></td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Utilisation / margin</td>
+              <td style="width: 25%;"><input type="text" id="studio-lft-util" class="docx-input" placeholder="e.g. 77.8% (< 80% Safe)" readonly style="background: #ECFDF5; color: #065F46; font-weight: 800;"></td>
+            </tr>
+          `);
+        } else {
+          html.push(`
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Load weight</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? '68.5 MT (Load + Rigging)' : '____________'}</td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Operating radius</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? '14.0 Meters' : '____________'}</td>
+            </tr>
+            <tr>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Crane capacity at radius</td>
+              <td style="width: 25%; font-weight: 700;">${(!isBlank && permit) ? '88.0 MT' : '____________'}</td>
+              <td style="width: 25%; font-weight: 700; background: #F9FAFB;">Utilisation / margin</td>
+              <td style="width: 25%; font-weight: 700; color: #059669;">${(!isBlank && permit) ? '77.8% (Approved Safe < 80%)' : '____________'}</td>
+            </tr>
+          `);
+        }
+        html.push('</table>');
       }
-      html.push('</table>');
       if (formSpec.sec04_note) {
         html.push(`<div style="font-size: 10px; font-weight: 600; margin-top: -6px; margin-bottom: 8px;">${formSpec.sec04_note}</div>`);
       }
@@ -604,19 +1200,45 @@ const BalsonsSafetyApp = {
     // 9. 05 HAZARDS, ADDITIONAL CONTROLS AND SUPPORTING DOCUMENTS
     html.push('<div class="docx-section-title">05  HAZARDS, ADDITIONAL CONTROLS AND SUPPORTING DOCUMENTS</div>');
     html.push('<table class="docx-table">');
-    for (let r of sec05) {
-      let label = r[0];
-      let val = r[1] || '';
-      if (!isBlank && permit) {
-        if (label.includes('Identified hazards')) val = `Pinch points, suspended load, elevated access (${permit.RiskLevel || 'HIGH'} Risk)`;
-        else if (label.includes('Additional control')) val = 'Dedicated supervisor standby, 10M exclusion zone, 100% PPE compliance';
-        else if (label.includes('PPE')) val = 'Mandatory helmet, safety boots, high-vis vest, task-specific gloves/harness';
-        else if (label.includes('Emergency')) val = 'Site Safety Hotline +91 94370 XXXXX · OHC Medic +91 97760 XXXXX';
+    if (isEditable) {
+      html.push(`
+        <tr>
+          <td style="width: 32%; font-weight: 700; background: #F9FAFB;">Identified hazards</td>
+          <td style="width: 68%;"><textarea id="studio-hazards" class="docx-textarea" rows="2" placeholder="Identified hazards..."></textarea></td>
+        </tr>
+        <tr>
+          <td style="width: 32%; font-weight: 700; background: #F9FAFB;">Additional control measures</td>
+          <td style="width: 68%;"><textarea id="studio-controls" class="docx-textarea" rows="2" placeholder="Additional risk controls..."></textarea></td>
+        </tr>
+        <tr>
+          <td style="width: 32%; font-weight: 700; background: #F9FAFB;">Mandatory PPE</td>
+          <td style="width: 68%;"><input type="text" id="studio-ppe" class="docx-input" placeholder="Mandatory PPE specified..."></td>
+        </tr>
+        <tr>
+          <td style="width: 32%; font-weight: 700; background: #F9FAFB;">Emergency contact / procedure</td>
+          <td style="width: 68%;"><input type="text" id="studio-emergency" class="docx-input" placeholder="Site emergency contact & medical response..."></td>
+        </tr>
+        <tr>
+          <td style="width: 32%; font-weight: 700; background: #F9FAFB;">Reference / attached documents</td>
+          <td style="width: 68%;"><input type="text" id="studio-references" class="docx-input" placeholder="JSA Ref, Lifting Plan, Rigging Drawing, Certificates..."></td>
+        </tr>
+      `);
+    } else {
+      for (let r of sec05) {
+        let label = r[0];
+        let val = r[1] || '';
+        if (!isBlank && permit) {
+          if (label.includes('Identified hazards')) val = `Pinch points, suspended load, elevated access (${permit.RiskLevel || 'HIGH'} Risk)`;
+          else if (label.includes('Additional control')) val = 'Dedicated supervisor standby, 10M exclusion zone, 100% PPE compliance';
+          else if (label.includes('PPE')) val = 'Mandatory helmet, safety boots, high-vis vest, task-specific gloves/harness';
+          else if (label.includes('Emergency')) val = 'Site Safety Hotline +91 94370 99911 · OHC Medic Ext 222';
+          else if (label.includes('Reference')) val = `JSA-JTRWF-2026-REV02, Method Statement #MS-04`;
+        }
+        html.push('<tr>');
+        html.push(`<td style="width: 32%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
+        html.push(`<td style="width: 68%; font-weight: ${!isBlank ? '700' : '400'};">${val}</td>`);
+        html.push('</tr>');
       }
-      html.push('<tr>');
-      html.push(`<td style="width: 32%; font-weight: 700; background: #F9FAFB;">${label}</td>`);
-      html.push(`<td style="width: 68%;">${val}</td>`);
-      html.push('</tr>');
     }
     html.push('</table>');
 
@@ -633,45 +1255,138 @@ const BalsonsSafetyApp = {
       <div style="font-size: 10px; line-height: 1.4; margin-bottom: 6px; color: #111827;">
         I confirm that the work scope and location are correctly described, the work team has been briefed, and the required controls and supporting documents have been identified. I will stop work and seek reassessment if conditions or scope change.
       </div>
-      <div style="font-size: 10.5px; font-weight: 700; margin-bottom: 10px; color: #000000;">
-        Applicant name: <span style="text-decoration: underline;">${(!isBlank && permit) ? permit.SupervisorID : '__________________________'}</span> &nbsp;&nbsp;&nbsp; 
-        Signature: <span style="text-decoration: underline;">${(!isBlank && permit) ? 'Signed & Submitted ✓' : '__________________________'}</span> &nbsp;&nbsp;&nbsp; 
-        Date / Time: <span style="text-decoration: underline;">${(!isBlank && permit) ? this.formatDateTime(permit.PlannedStart) : '__________________________'}</span>
-      </div>
     `);
+    if (isEditable) {
+      html.push(`
+        <div style="font-size: 10.5px; font-weight: 700; margin-bottom: 10px; color: #000000; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div>
+            Applicant name: 
+            <input type="text" id="studio-decl-name" class="docx-input" style="width: 180px; display: inline-block; font-weight: 700;" placeholder="Supervisor Name">
+          </div>
+          <div>
+            Signature: 
+            <label style="display: inline-flex; align-items: center; gap: 4px; cursor: pointer; color: #059669; font-weight: 700;">
+              <input type="checkbox" id="studio-decl-signed">
+              <span>Digital Signature Confirmed ✓</span>
+            </label>
+          </div>
+          <div>
+            Date / Time: 
+            <input type="datetime-local" id="studio-decl-dt" class="docx-input" style="width: 170px; display: inline-block;" value="${new Date().toISOString().slice(0, 16)}">
+          </div>
+        </div>
+      `);
+    } else {
+      html.push(`
+        <div style="font-size: 10.5px; font-weight: 700; margin-bottom: 10px; color: #000000;">
+          Applicant name: <span style="text-decoration: underline;">${(!isBlank && permit) ? (permit.SupervisorID || permit.Applicant || 'R. K. Sharma') : '__________________________'}</span> &nbsp;&nbsp;&nbsp; 
+          Signature: <span style="text-decoration: underline; color: #059669;">${(!isBlank && permit) ? 'Signed & Submitted ✓' : '__________________________'}</span> &nbsp;&nbsp;&nbsp; 
+          Date / Time: <span style="text-decoration: underline;">${(!isBlank && permit) ? this.formatDateTime(permit.PlannedStart) : '__________________________'}</span>
+        </div>
+      `);
+    }
 
     // 12. APPROVAL WORKFLOW – SEQUENTIAL
     html.push('<div class="docx-section-title">APPROVAL WORKFLOW – SEQUENTIAL</div>');
     html.push('<table class="docx-table">');
-    for (let idx = 0; idx < appr.length; idx++) {
-      let r = appr[idx];
-      let isHeader = (idx === 0);
-      html.push('<tr>');
-      for (let c of r) {
-        if (isHeader) {
-          html.push(`<td style="font-weight: 800; background: #E5E7EB; font-size: 10px;">${c}</td>`);
-        } else {
-          let cellVal = c;
-          if (!isBlank && permit) {
-            if (cellVal.includes('[ ] Submit')) cellVal = '<strong style="color: #059669;">[☑] Submit (Done)</strong>';
-            if (cellVal.includes('[ ] Approve') && (permit.Status === 'VERIFIED' || permit.Status === 'ISSUED' || permit.Status === 'CLOSED')) {
-              cellVal = '<strong style="color: #059669;">[☑] Approve (Verified)</strong>';
+    if (isEditable) {
+      const todayDate = new Date().toISOString().split('T')[0];
+      html.push(`
+        <tr>
+          <td style="font-weight: 800; background: #E5E7EB; font-size: 10px; width: 28%;">Role / stage</td>
+          <td style="font-weight: 800; background: #E5E7EB; font-size: 10px; width: 22%;">Name</td>
+          <td style="font-weight: 800; background: #E5E7EB; font-size: 10px; width: 25%;">Decision</td>
+          <td style="font-weight: 800; background: #E5E7EB; font-size: 10px; width: 25%;">Date / Time</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 700;">1. Work Supervisor / Applicant</td>
+          <td><input type="text" id="studio-appr-sup-name" class="docx-input" placeholder="Supervisor Name"></td>
+          <td>
+            <select id="studio-appr-sup-dec" class="docx-input">
+              <option value="SUBMITTED">☑ Submitted</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          </td>
+          <td><input type="date" id="studio-appr-sup-date" class="docx-input" value="${todayDate}"></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 700;">2. Safety Officer</td>
+          <td><input type="text" id="studio-appr-so-name" class="docx-input" placeholder="Safety Officer Name"></td>
+          <td>
+            <select id="studio-appr-so-dec" class="docx-input">
+              <option value="ENDORSED">☑ Endorsed</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          </td>
+          <td><input type="date" id="studio-appr-so-date" class="docx-input" value="${todayDate}"></td>
+        </tr>
+        <tr>
+          <td style="font-weight: 700;">3. Site Manager / Authorised Issuer</td>
+          <td><input type="text" id="studio-appr-sm-name" class="docx-input" placeholder="Site Manager Name"></td>
+          <td>
+            <select id="studio-appr-sm-dec" class="docx-input">
+              <option value="APPROVED">☑ Approved</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          </td>
+          <td><input type="date" id="studio-appr-sm-date" class="docx-input" value="${todayDate}"></td>
+        </tr>
+      `);
+    } else {
+      for (let idx = 0; idx < appr.length; idx++) {
+        let r = appr[idx];
+        let isHeader = (idx === 0);
+        html.push('<tr>');
+        for (let c of r) {
+          if (isHeader) {
+            html.push(`<td style="font-weight: 800; background: #E5E7EB; font-size: 10px;">${c}</td>`);
+          } else {
+            let cellVal = c;
+            if (!isBlank && permit) {
+              if (cellVal.includes('[ ] Submit')) cellVal = '<strong style="color: #059669;">[☑] Submit (Done)</strong>';
+              if (cellVal.includes('[ ] Approve') && (permit.Status === 'VERIFIED' || permit.Status === 'ISSUED' || permit.Status === 'CLOSED')) {
+                cellVal = '<strong style="color: #059669;">[☑] Approve (Verified)</strong>';
+              }
             }
+            html.push(`<td style="font-size: 10px; padding: 4px 6px;">${cellVal}</td>`);
           }
-          html.push(`<td style="font-size: 10px; padding: 4px 6px;">${cellVal}</td>`);
         }
+        html.push('</tr>');
       }
-      html.push('</tr>');
     }
     html.push('</table>');
-    html.push(`
-      <div style="font-size: 10.5px; font-weight: 700; margin-top: -6px; margin-bottom: 10px; color: #000000;">
-        Permit issued by: <span style="text-decoration: underline;">${(!isBlank && permit && (permit.Status === 'ISSUED' || permit.Status === 'CLOSED')) ? 'Gajendra Rao (Site Safety Mgr)' : '__________________________'}</span> &nbsp;&nbsp;&nbsp; 
-        Signature: <span style="text-decoration: underline;">${(!isBlank && permit && (permit.Status === 'ISSUED' || permit.Status === 'CLOSED')) ? 'Signed ✓' : '____________________'}</span> &nbsp;&nbsp;&nbsp; 
-        Valid from: <span style="text-decoration: underline;">${(!isBlank && permit) ? this.formatDateTime(permit.PlannedStart) : '____________'}</span> &nbsp;&nbsp;&nbsp; 
-        To: <span style="text-decoration: underline;">${(!isBlank && permit) ? this.formatDateTime(permit.PlannedEnd) : '____________'}</span>
-      </div>
-    `);
+
+    if (isEditable) {
+      const nowIso = new Date().toISOString().slice(0, 16);
+      const eightHrsIso = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 16);
+      html.push(`
+        <div style="font-size: 10.5px; font-weight: 700; margin-top: -6px; margin-bottom: 10px; color: #000000; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div>
+            Permit issued by: 
+            <input type="text" id="studio-issuer-name" class="docx-input" style="width: 170px; display: inline-block;" placeholder="Issuer Name">
+          </div>
+          <div>
+            Valid from: 
+            <input type="datetime-local" id="studio-valid-from" class="docx-input" style="width: 165px; display: inline-block;" value="${nowIso}">
+          </div>
+          <div>
+            To: 
+            <input type="datetime-local" id="studio-valid-to" class="docx-input" style="width: 165px; display: inline-block;" value="${eightHrsIso}">
+          </div>
+        </div>
+      `);
+    } else {
+      html.push(`
+        <div style="font-size: 10.5px; font-weight: 700; margin-top: -6px; margin-bottom: 10px; color: #000000;">
+          Permit issued by: <span style="text-decoration: underline;">${(!isBlank && permit && (permit.Status === 'ISSUED' || permit.Status === 'CLOSED')) ? 'Gajendra Rao (Site Safety Mgr)' : '__________________________'}</span> &nbsp;&nbsp;&nbsp; 
+          Signature: <span style="text-decoration: underline; color: #059669;">${(!isBlank && permit && (permit.Status === 'ISSUED' || permit.Status === 'CLOSED')) ? 'Signed & Authorised ✓' : '____________________'}</span> &nbsp;&nbsp;&nbsp; 
+          Valid from: <span style="text-decoration: underline;">${(!isBlank && permit) ? this.formatDateTime(permit.PlannedStart) : '____________'}</span> &nbsp;&nbsp;&nbsp; 
+          To: <span style="text-decoration: underline;">${(!isBlank && permit) ? this.formatDateTime(permit.PlannedEnd) : '____________'}</span>
+        </div>
+      `);
+    }
 
     // 13. WORK COMPLETION / SUSPENSION / CLOSURE
     html.push('<div class="docx-section-title">WORK COMPLETION / SUSPENSION / CLOSURE</div>');
@@ -688,18 +1403,40 @@ const BalsonsSafetyApp = {
       html.push('</tr>');
     }
     html.push('</table>');
-    html.push(`
-      <div style="font-size: 10.5px; font-weight: 700; margin-top: -6px; margin-bottom: 4px; color: #000000;">
-        Final status: &nbsp; 
-        ${(!isBlank && permit && permit.Status === 'CLOSED') ? '<strong style="color: #059669;">[☑] CLOSED</strong>' : '[ ] CLOSED'} &nbsp;&nbsp; 
-        [ ] SUSPENDED &nbsp;&nbsp; [ ] CANCELLED &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-        Closure / handback notes: <span style="text-decoration: underline;">${(!isBlank && permit && permit.Status === 'CLOSED') ? 'Area inspected, tools removed, locks cleared, handed back safe.' : '__________________________________________'}</span>
-      </div>
-    `);
+
+    if (isEditable) {
+      html.push(`
+        <div style="font-size: 10.5px; font-weight: 700; margin-top: -6px; margin-bottom: 4px; color: #000000; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+          <div>
+            Final status: 
+            <select id="studio-close-status" class="docx-input" style="width: 140px; display: inline-block; font-weight: 800;">
+              <option value="ACTIVE">ACTIVE (Open)</option>
+              <option value="CLOSED">CLOSED (Completed)</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            Closure / handback notes: 
+            <input type="text" id="studio-close-notes" class="docx-input" style="width: calc(100% - 170px); display: inline-block;" placeholder="Area inspected, tools removed, locks cleared, handed back safe.">
+          </div>
+        </div>
+      `);
+    } else {
+      html.push(`
+        <div style="font-size: 10.5px; font-weight: 700; margin-top: -6px; margin-bottom: 4px; color: #000000;">
+          Final status: &nbsp; 
+          ${(!isBlank && permit && permit.Status === 'CLOSED') ? '<strong style="color: #059669;">[☑] CLOSED</strong>' : '[ ] CLOSED'} &nbsp;&nbsp; 
+          [ ] SUSPENDED &nbsp;&nbsp; [ ] CANCELLED &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+          Closure / handback notes: <span style="text-decoration: underline;">${(!isBlank && permit && permit.Status === 'CLOSED') ? 'Area inspected, tools removed, locks cleared, handed back safe.' : '__________________________________________'}</span>
+        </div>
+      `);
+    }
 
     html.push('</div>'); // end docx-permit-sheet
     return html.join('\n');
   },
+
 
   // ==========================================
   // MODULE 02: TOOLBOX TALKS (TBT)

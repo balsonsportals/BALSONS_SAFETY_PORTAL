@@ -696,32 +696,199 @@
       line-height: 1.3;
     }
 
+    /* Fillable Online Input & Control Elements */
+    .docx-input {
+      width: 100%;
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      color: #0F172A;
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 3px;
+      padding: 3px 6px;
+      transition: all 0.15s ease;
+    }
+    .docx-input:focus {
+      outline: none;
+      border-color: #0097B2;
+      background: #FFFFFF;
+      box-shadow: 0 0 0 2px rgba(0, 151, 178, 0.18);
+    }
+    .docx-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      color: #0F172A;
+      background: #F8FAFC;
+      border: 1px solid #CBD5E1;
+      border-radius: 3px;
+      padding: 4px 6px;
+      resize: vertical;
+      min-height: 38px;
+      transition: all 0.15s ease;
+    }
+    .docx-textarea:focus {
+      outline: none;
+      border-color: #0097B2;
+      background: #FFFFFF;
+      box-shadow: 0 0 0 2px rgba(0, 151, 178, 0.18);
+    }
+
+    /* Checklist Row & Interactive Radio Buttons */
+    .docx-chk-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .docx-chk-label {
+      flex: 1;
+      font-size: 10px;
+      color: #000000;
+      line-height: 1.25;
+    }
+    .docx-radio-group {
+      display: inline-flex;
+      gap: 3px;
+      flex-shrink: 0;
+      background: #F1F5F9;
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: 1px solid #CBD5E1;
+    }
+    .docx-radio-btn {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 9.5px;
+      font-weight: 700;
+      user-select: none;
+      color: #334155;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      transition: all 0.12s;
+    }
+    .docx-radio-btn input {
+      margin-right: 2px;
+      cursor: pointer;
+      display: none;
+    }
+    .docx-radio-btn.active-y {
+      background: #059669 !important;
+      color: #FFFFFF !important;
+      border-color: #047857 !important;
+    }
+    .docx-radio-btn.active-n {
+      background: #DC2626 !important;
+      color: #FFFFFF !important;
+      border-color: #B91C1C !important;
+    }
+    .docx-radio-btn.active-na {
+      background: #4B5563 !important;
+      color: #FFFFFF !important;
+      border-color: #374151 !important;
+    }
+
+    .docx-print-chk {
+      display: none;
+      font-family: monospace;
+      font-weight: 800;
+      font-size: 10.5px;
+      color: #000000;
+      white-space: nowrap;
+    }
+
+    /* Print Preview Mode: Hide borders, hide helper buttons, show clean printed document */
+    .docx-permit-sheet.preview-mode .docx-input,
+    .docx-permit-sheet.preview-mode .docx-textarea,
+    .docx-permit-sheet.preview-mode select.docx-input {
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      color: #000000 !important;
+      font-weight: 700 !important;
+      resize: none !important;
+      min-height: auto !important;
+      border-radius: 0 !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+    }
+    .docx-permit-sheet.preview-mode .docx-chk-toolbar,
+    .docx-permit-sheet.preview-mode .sec04-helper-btn,
+    .docx-permit-sheet.preview-mode .docx-radio-group {
+      display: none !important;
+    }
+    .docx-permit-sheet.preview-mode .docx-print-chk {
+      display: inline-block !important;
+    }
+
     /* Print media rule — Exact standard A4 page reproduction */
     @media print {
       body * {
-        visibility: hidden;
+        visibility: hidden !important;
       }
-      .docx-permit-sheet, .docx-permit-sheet *,
-      .a4-permit-document, .a4-permit-document * {
+      .docx-permit-sheet, .docx-permit-sheet * {
         visibility: visible !important;
       }
       .docx-permit-sheet {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 8mm 10mm !important;
+        padding: 6mm 8mm !important;
         box-shadow: none !important;
         border: none !important;
       }
-      .a4-permit-document {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        border: none;
+      .docx-permit-sheet .docx-input,
+      .docx-permit-sheet .docx-textarea,
+      .docx-permit-sheet select.docx-input {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        color: #000000 !important;
+        font-weight: 700 !important;
+        resize: none !important;
+        min-height: auto !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+      }
+      .docx-permit-sheet .docx-chk-toolbar,
+      .docx-permit-sheet .sec04-helper-btn,
+      .docx-permit-sheet .docx-radio-group,
+      .quick-action-bar,
+      #permit-studio-selector,
+      #top-nav-bar,
+      #beds-app-header,
+      #beds-app-footer {
+        display: none !important;
+      }
+      .docx-permit-sheet .docx-print-chk {
+        display: inline-block !important;
+      }
+      .beds-modal-overlay, .beds-modal-dialog, .beds-modal-body {
+        position: static !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        transform: none !important;
+      }
+      .beds-modal-header {
+        display: none !important;
       }
     }
   </style>
@@ -1018,24 +1185,35 @@
     <!-- ======================================================== -->
     <div id="view-permit-studio" class="beds-view-panel">
       <!-- Studio Header / Action Toolbar -->
-      <div class="quick-action-bar" style="border-left: 4px solid var(--beds-teal-primary); background: var(--beds-bg-panel);">
-        <div style="display: flex; flex-direction: column; gap: 3px;">
-          <div style="font-size: 14.5px; font-weight: 800; color: var(--beds-charcoal-heading);" data-i18n="studio_title">
-            BALSONS CONTROLLED PERMIT FORMS STUDIO (V1.1 LIBRARY)
+      <div class="quick-action-bar" style="border-left: 4px solid var(--beds-teal-primary); background: var(--beds-bg-panel); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 14.5px; font-weight: 800; color: var(--beds-charcoal-heading);" data-i18n="studio_title">
+              BALSONS CONTROLLED PERMIT FORMS STUDIO (V1.1 LIBRARY)
+            </span>
+            <span id="studio-mode-badge" style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: rgba(0, 151, 178, 0.12); color: var(--beds-teal-primary); border: 1px solid var(--beds-teal-primary);">
+              ✏️ EDIT ONLINE MODE
+            </span>
           </div>
           <div style="font-size: 11.5px; color: var(--beds-text-secondary);" data-i18n="studio_sub">
-            Official 7 Controlled Work Permits for JTRWF Khordha Project · Standards Compliant Print & Digital Authorisation
+            Fillable Online Permits · Preview Print & Instant A4 Paper Printing · JTRWF Khordha Project Digital Work Authorisation
           </div>
         </div>
-        <div class="action-btn-group">
-          <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.printStudioForm()" data-i18n="btn_print_form">
+        <div class="action-btn-group" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <button id="btn-studio-mode-toggle" class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.toggleStudioPreviewMode()" style="font-weight: 700;">
+            👁️ Preview Print
+          </button>
+          <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.fillStudioSampleData()" title="Populate realistic JTRWF project engineering data" style="font-weight: 700;">
+            ⚡ Fill Sample Demo Data
+          </button>
+          <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.resetStudioForm()" title="Clear form to blank template" style="font-weight: 700;">
+            🔄 Reset to Blank
+          </button>
+          <button class="beds-btn beds-btn-primary" onclick="BalsonsSafetyApp.saveStudioPermitOnline()" style="background: #059669; border-color: #059669; color: #FFFFFF; font-weight: 700;">
+            💾 Save & Submit Permit
+          </button>
+          <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.printStudioForm()" style="font-weight: 700;" data-i18n="btn_print_form">
             🖨️ Print Form (A4)
-          </button>
-          <button class="beds-btn beds-btn-secondary" onclick="window.print()" data-i18n="btn_export_pdf_blank">
-            📥 Export Printable PDF
-          </button>
-          <button class="beds-btn beds-btn-primary" onclick="BalsonsSafetyApp.initiatePermitFromStudio()" data-i18n="btn_fill_initiate">
-            ⚡ Fill & Initiate Digital PTW
           </button>
         </div>
       </div>
