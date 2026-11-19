@@ -742,7 +742,55 @@ const BalsonsSafetyApp = {
       this.renderPermitRows(this.cachedPermits, 'ptw-table-body');
     }
 
-    alert(`✅ Permit [${permitId}] successfully saved and registered in Master PTW Register! Status: ISSUED.`);
+    // Display rich interactive success banner above permit form
+    const statusContainer = document.getElementById('permit-submit-status-container');
+    if (statusContainer) {
+      statusContainer.style.display = 'block';
+      statusContainer.innerHTML = `
+        <div style="background: #ECFDF5; border: 1px solid #10B981; border-radius: var(--beds-radius-md); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);">
+          <div>
+            <div style="font-size: 14px; font-weight: 800; color: #065F46; display: flex; align-items: center; gap: 8px;">
+              <span>✅</span>
+              <span>PERMIT INITIATED & DUAL-SYNCED TO GOOGLE SHEET</span>
+              <span style="font-size: 10px; background: #059669; color: #FFFFFF; padding: 2px 8px; border-radius: 4px; font-weight: 800;">LIVE</span>
+            </div>
+            <div style="font-size: 12px; color: #047857; margin-top: 3px;">
+              Permit Reference: <strong style="font-family: monospace; font-size: 13px;">${permitId}</strong> (${tmpl.name}) · Work Area: <strong>${area}</strong> · Supervisor: <strong>${applicant}</strong>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="beds-btn beds-btn-primary" onclick="BalsonsSafetyApp.printStudioForm()" style="background: #059669; border-color: #059669; font-weight: 700;">🖨️ Print Official A4 Permit</button>
+            <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.switchView('view-ptw')" style="font-weight: 700;">📋 View Master Register</button>
+            <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.resetStudioForm()" style="font-weight: 700;">✍️ Initiate Another Permit</button>
+          </div>
+        </div>
+      `;
+      statusContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    if (window.BalsonsWorkspace) {
+      window.BalsonsWorkspace.showToast(`✅ Permit ${permitId} successfully saved & dual-synced with Google Sheet!`, 'success');
+    }
+
+    // Automatically switch to print preview mode so supervisor can inspect the complete final document
+    this.studioPreviewMode = true;
+    this.updateStudioModeUI();
+  },
+
+  signSupervisorNow: function() {
+    const nameEl = document.getElementById('studio-decl-name');
+    const signEl = document.getElementById('studio-decl-signed');
+    const dtEl = document.getElementById('studio-decl-dt');
+    const appEl = document.getElementById('studio-applicant');
+    const user = BalsonsSafetyAuth.getUser();
+    const supervisorName = (appEl && appEl.value.trim()) ? appEl.value.trim() : (user.fullName || 'Ramesh Kumar (Lifting Supervisor)');
+    
+    if (nameEl) nameEl.value = supervisorName;
+    if (signEl) signEl.checked = true;
+    if (dtEl) dtEl.value = new Date().toISOString().slice(0, 16);
+    if (window.BalsonsWorkspace) {
+      window.BalsonsWorkspace.showToast(`✍️ Supervisor digital acknowledgement stamped: ${supervisorName}`, 'success');
+    }
   },
 
   printStudioForm: function() {
@@ -1267,10 +1315,10 @@ const BalsonsSafetyApp = {
     `);
     if (isEditable) {
       html.push(`
-        <div style="font-size: 10.5px; font-weight: 700; margin-bottom: 10px; color: #000000; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <div style="font-size: 10.5px; font-weight: 700; margin-bottom: 10px; color: #000000; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
           <div>
             Applicant name: 
-            <input type="text" id="studio-decl-name" class="docx-input" style="width: 180px; display: inline-block; font-weight: 700;" placeholder="Supervisor Name">
+            <input type="text" id="studio-decl-name" class="docx-input" style="width: 170px; display: inline-block; font-weight: 700;" placeholder="Supervisor Name">
           </div>
           <div>
             Signature: 
@@ -1278,10 +1326,11 @@ const BalsonsSafetyApp = {
               <input type="checkbox" id="studio-decl-signed">
               <span>Digital Signature Confirmed ✓</span>
             </label>
+            <button type="button" class="beds-btn beds-btn-sm beds-btn-secondary" onclick="BalsonsSafetyApp.signSupervisorNow()" style="font-size: 10px; padding: 3px 8px; font-weight: 700; color: #059669; border-color: #10B981; margin-left: 6px;">✍️ Click to Sign</button>
           </div>
           <div>
             Date / Time: 
-            <input type="datetime-local" id="studio-decl-dt" class="docx-input" style="width: 170px; display: inline-block;" value="${new Date().toISOString().slice(0, 16)}">
+            <input type="datetime-local" id="studio-decl-dt" class="docx-input" style="width: 165px; display: inline-block;" value="${new Date().toISOString().slice(0, 16)}">
           </div>
         </div>
       `);

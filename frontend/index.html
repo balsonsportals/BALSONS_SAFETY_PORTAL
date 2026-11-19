@@ -937,18 +937,18 @@
         📋 <span data-i18n="nav_work_auth">Work Authorisation (PTW)</span> <span class="beds-caret">▾</span>
       </button>
       <div class="beds-dropdown-menu" id="menu-nav-ptw">
+        <a class="beds-dropdown-item" data-target="view-permit-studio" style="background: rgba(0, 151, 178, 0.08); border-left: 3px solid var(--beds-teal-primary);">
+          <span class="item-icon">✍️</span>
+          <div class="item-text">
+            <strong style="color: var(--beds-teal-primary);">Initiate Permit-to-Work (Supervisor Studio)</strong>
+            <small>Official fillable A4 format & instant printout</small>
+          </div>
+        </a>
         <a class="beds-dropdown-item" data-target="view-ptw">
           <span class="item-icon">📋</span>
           <div class="item-text">
             <strong data-i18n="nav_ptw_master">Master PTW Register</strong>
             <small>Live active, verified & approved permits</small>
-          </div>
-        </a>
-        <a class="beds-dropdown-item" data-target="view-permit-studio">
-          <span class="item-icon">📄</span>
-          <div class="item-text">
-            <strong data-i18n="nav_permit_studio">Controlled 7 Permit Forms Studio</strong>
-            <small>Official BALSONS branded A4 templates & generator</small>
           </div>
         </a>
         <a class="beds-dropdown-item" data-target="view-lifting">
@@ -1073,6 +1073,16 @@
     </div>
   </nav>
 
+  <!-- Mobile Swipeable Quick-Pill Bar (Smartphone & Tablet Optimized) -->
+  <div class="beds-mobile-pill-bar">
+    <button class="beds-btn beds-btn-sm beds-btn-primary" onclick="BalsonsSafetyApp.switchView('view-dashboard')">📊 Dashboard</button>
+    <button class="beds-btn beds-btn-sm beds-btn-secondary" onclick="BalsonsSafetyApp.switchView('view-permit-studio')" style="color: var(--beds-teal-primary); font-weight: 700;">✍️ Initiate PTW</button>
+    <button class="beds-btn beds-btn-sm beds-btn-secondary" onclick="BalsonsSafetyApp.switchView('view-ptw')">📋 Permits</button>
+    <button class="beds-btn beds-btn-sm beds-btn-secondary" onclick="BalsonsSafetyApp.switchView('view-dossier-360')">📄 360° Dossier</button>
+    <button class="beds-btn beds-btn-sm beds-btn-secondary" onclick="BalsonsSafetyApp.switchView('view-induction')">🦺 Inductions</button>
+    <button class="beds-btn beds-btn-sm beds-btn-secondary" onclick="BalsonsSafetyApp.switchView('view-tbt')">🗣️ TBT</button>
+  </div>
+
   <!-- Main View Area -->
   <main>
 
@@ -1173,8 +1183,8 @@
           <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.loadPermits('CONFINED SPACE')">⚠️ Confined Space</button>
         </div>
         <div class="action-btn-group">
-          <button class="beds-btn beds-btn-primary" onclick="document.getElementById('modal-ptw-create').classList.add('active')" data-i18n="btn_new_ptw">
-            + Create Work Permit
+          <button class="beds-btn beds-btn-primary" onclick="BalsonsSafetyApp.switchView('view-permit-studio')" data-i18n="btn_new_ptw" style="font-weight: 700;">
+            ✍️ Initiate Permit-to-Work
           </button>
         </div>
       </div>
@@ -1202,22 +1212,25 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- VIEW 02-B: CONTROLLED 7 PERMIT FORMS STUDIO               -->
+    <!-- VIEW 02-B: INITIATE PERMIT-TO-WORK (SUPERVISOR STUDIO)     -->
     <!-- ======================================================== -->
     <div id="view-permit-studio" class="beds-view-panel">
       <!-- Studio Header / Action Toolbar -->
-      <div class="quick-action-bar" style="border-left: 4px solid var(--beds-teal-primary); background: var(--beds-bg-panel); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div class="quick-action-bar" style="border-left: 4px solid var(--beds-teal-primary); background: var(--beds-bg-panel); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
         <div style="display: flex; flex-direction: column; gap: 4px;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 14.5px; font-weight: 800; color: var(--beds-charcoal-heading);" data-i18n="studio_title">
-              BALSONS CONTROLLED PERMIT FORMS STUDIO (V1.1 LIBRARY)
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 15px; font-weight: 800; color: var(--beds-charcoal-heading);" data-i18n="studio_title">
+              ✍️ INITIATE PERMIT-TO-WORK (SUPERVISOR FILLABLE & PRINTABLE FORM)
             </span>
             <span id="studio-mode-badge" style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: rgba(0, 151, 178, 0.12); color: var(--beds-teal-primary); border: 1px solid var(--beds-teal-primary);">
-              ✏️ EDIT ONLINE MODE
+              ✏️ SUPERVISOR EDIT ONLINE
+            </span>
+            <span class="meta-badge" style="background: rgba(16, 185, 129, 0.12); color: #059669; font-weight: 700; border: 1px solid #10B981; font-size: 10px;">
+              ⚡ DUAL-SYNC ACTIVE
             </span>
           </div>
           <div style="font-size: 11.5px; color: var(--beds-text-secondary);" data-i18n="studio_sub">
-            Fillable Online Permits · Preview Print & Instant A4 Paper Printing · JTRWF Khordha Project Digital Work Authorisation
+            Exact Official BALSONS Word Clone · Supervisor Online Interactive Fill · Checklists · Live A4 Printout
           </div>
         </div>
         <div class="action-btn-group" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
@@ -1238,6 +1251,9 @@
           </button>
         </div>
       </div>
+
+      <!-- Live Submit Status Notification Banner -->
+      <div id="permit-submit-status-container" style="display: none; margin-bottom: 14px;"></div>
 
       <!-- 7 Permit Template Selector Pill Bar -->
       <div id="permit-studio-selector" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; background: var(--beds-bg-panel); padding: 10px 14px; border: 1px solid var(--beds-border); border-radius: var(--beds-radius-md);">
@@ -2009,14 +2025,6 @@
     </div>
   </div>
 
-  <!-- Application Scripts -->
-  <script src="assets/js/config.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/translations.js"></script>
-  <script src="assets/js/api-client.js"></script>
-  <script src="assets/js/docx-forms-data.js"></script>
-  <script src="assets/js/dossier-360.js"></script>
-  <script src="assets/js/app.js"></script>
   <!-- Modal 6: Conduct Safety Induction -->
   <div class="beds-modal-overlay" id="modal-induction-create">
     <div class="beds-modal-dialog" style="max-width: 640px;">
@@ -2109,5 +2117,14 @@
     </div>
   </div>
 
+  <!-- Application Scripts -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/translations.js"></script>
+  <script src="assets/js/api-client.js"></script>
+  <script src="assets/js/docx-forms-data.js"></script>
+  <script src="assets/js/dossier-360.js"></script>
+  <script src="assets/js/beds-workspace.js"></script>
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
