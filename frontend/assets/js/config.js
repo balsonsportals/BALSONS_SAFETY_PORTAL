@@ -1,6 +1,7 @@
 /**
  * BALSONS SAFETY PORTAL - FRONTEND CONFIGURATION
  * Baseline: SAM-2026 & BEDS V1.0
+ * Controlled Library: BALSONS_JTRWF_PTW_FORMS_V1_1_SEVEN_PERMITS
  * Project: Jupiter Tatravagonka Railwheel Factory (JTRWF), Khordha, Odisha
  */
 
@@ -11,14 +12,15 @@ const BALSONS_SAFETY_CONFIG = {
   CLIENT_NAME: 'Jupiter Tatravagonka Railwheel Factory Pvt. Ltd.',
   CONTRACTOR_NAME: 'BALSONS HEAVY LIFT & SHIFT',
   LOCATION: 'Khordha, Odisha, India',
-  VERSION: '1.0.0-sam2026',
+  VERSION: '1.2.0-seven-forms',
   ENV: 'production',
   
+  // Database Reference
   SPREADSHEET_ID: '1SyOGt6HEu6HJCufAbB2_P6BgF6pEppt28J_8cARaOP0',
   SPREADSHEET_URL: 'https://docs.google.com/spreadsheets/d/1SyOGt6HEu6HJCufAbB2_P6BgF6pEppt28J_8cARaOP0/edit',
-  
+
   // Google Apps Script Web App Deployment URL
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx_-QdCfVxEXScvaqEpiV64py7Jbwr1HdmGpw0qufxFLL5OGhh7NbiwGBQaSF5cSWq3/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwgutbfm18PJPhsj_3-0C9Kt5AeaLqvGzoP8RMPab6ESzfm5SBkEPf8YslN8tJhOZJL/exec',
   USE_TEXT_PLAIN_TRANSPORT: true,
 
   STORAGE_SESSION_KEY: 'balsons_safety_session',
@@ -32,129 +34,151 @@ const BALSONS_SAFETY_CONFIG = {
     { code: 'AREA-04', name: 'Die Shop & Heavy Tooling', hod: 'Ajay Verma', safetyOfficer: 'Rakesh Swain' }
   ],
 
+  /**
+   * 7 Controlled Operational PTW Templates (V1.1 Library)
+   */
   PTW_TEMPLATES: [
     {
-      code: 'PTW-T01',
+      code: 'PTW-GEN',
       category: 'GENERAL',
-      name: 'General Cold Work Permit',
+      docNo: 'BAL-JTRWF-SAF-PTW-001',
+      name: 'General Work Permit',
       validity: 12,
       prerequisites: [
-        'Approved Job Safety Analysis (JSA) attached & briefed',
-        'Basic Mandatory PPE (Hard Hat, Steel-Toe Boots, Hi-Vis Vest, Safety Glasses)',
-        'Work area physical barricading with warning tags deployed',
-        'Emergency access and escape routes kept 100% unobstructed'
+        'Approved RA/JSA and method statement available',
+        'Work area inspected and safe for planned activity',
+        'Personnel briefed and competent for assigned task',
+        'Required PPE available and worn',
+        'Tools and equipment inspected and fit for use',
+        'Access, lighting and housekeeping adequate',
+        'Barricading / warning signage installed where required',
+        'Emergency arrangements and communication understood',
+        'Nearby operations and interfaces reviewed',
+        'Required supporting permits / isolations identified'
       ]
     },
     {
-      code: 'PTW-T02',
+      code: 'PTW-HOT',
       category: 'HOT WORK',
-      name: 'Hot Work & Welding Permit',
+      docNo: 'BAL-JTRWF-SAF-PTW-002',
+      name: 'Hot Work Permit',
       validity: 8,
       prerequisites: [
-        'Dedicated Fire Watch assigned with whistle and visible hi-vis badge',
-        'Two 10kg DCP Fire Extinguishers & Fire Sand Buckets at immediate work spot',
-        'Atmospheric Gas Test verified: 0% LEL (Combustibles cleared 10m radius)',
-        'Welding machine frame grounded with functional 30mA ELCB/RCCB fitted',
-        'Flame-retardant fire blanket barrier erected around sparks trajectory'
+        'Hot work RA/JSA and method statement approved',
+        'Combustibles removed or protected (10m radius)',
+        'Flammable atmosphere checked (0% LEL)',
+        'Gas cylinders upright and secured as required',
+        'Hoses, regulators and flashback arrestors inspected',
+        'Suitable fire extinguisher accessible (10kg DCP)',
+        'Fire watch assigned and briefed with whistle',
+        'Screens / spark containment fire blanket installed',
+        'Adjacent areas checked for fire exposure',
+        'Post-work fire watch duration defined (min 30 mins)',
+        'Hot work equipment isolated and removed after completion'
       ]
     },
     {
-      code: 'PTW-T03',
+      code: 'PTW-HT',
       category: 'HEIGHT WORK',
-      name: 'Work at Height Permit (>1.8M)',
+      docNo: 'BAL-JTRWF-SAF-PTW-003',
+      name: 'Work at Height Permit',
       validity: 10,
       prerequisites: [
-        'Full Body Double-Lanyard Safety Harness with shock absorber inspected',
-        '100% Tie-Off Anchor Point Verified (>22.2 kN / 5000 lbs rating)',
-        'Scaffolding inspected and displaying Green "SAFE FOR USE" tag',
-        'Full perimeter toe-boards, double guardrails and access ladder secured',
-        'Tool lanyards and safety netting installed for falling object prevention'
+        'Work-at-height RA/JSA approved',
+        'Safe platform / access selected',
+        'Scaffold / platform inspected and tagged (Green Tag)',
+        'Ladders suitable, tied-off and secured',
+        'Harness, double lanyard and connectors inspected',
+        'Anchor / lifeline suitability verified by competent person (>22kN)',
+        'Dropped-object controls and exclusion zone established',
+        'Tools and materials secured against falling with tool lanyards',
+        'Weather conditions acceptable (wind speed < 32 km/h, no rain)',
+        'Rescue plan, trained rescuers and equipment available'
       ]
     },
     {
-      code: 'PTW-T04',
+      code: 'PTW-CSE',
       category: 'CONFINED SPACE',
+      docNo: 'BAL-JTRWF-SAF-PTW-004',
       name: 'Confined Space Entry Permit',
       validity: 8,
+      hasAtmosphericTest: true,
       prerequisites: [
-        'Calibrated Multi-Gas Test: O2 (19.5%-23.5%), CO < 25ppm, H2S < 10ppm, LEL 0%',
-        'Continuous forced-air mechanical positive ventilation running throughout',
-        'Dedicated Standby Rescue Attendant stationed outside entry with logbook',
-        'Tripod retrieval winch, harness, and breathing apparatus (SCBA) ready',
-        'Intrinsically safe 24V explosion-proof illumination and radio communication'
+        'Confined-space classification and RA approved',
+        'Energy and material sources isolated and verified (LOTO)',
+        'Space cleaned / purged / ventilated as specified',
+        'Atmosphere tested by authorised competent person',
+        'Oxygen (19.5%-23.5%), flammable (0% LEL) and toxic readings recorded',
+        'Continuous / periodic forced-air ventilation confirmed',
+        'Standby attendant present outside entry and communication tested',
+        'Entrants trained, medically fit and logged',
+        'Suitable 24V explosion-proof lighting, tools and PPE available',
+        'Rescue tripod winch, harness and breathing apparatus ready',
+        'Entry / exit headcount register maintained'
       ]
     },
     {
-      code: 'PTW-T05',
+      code: 'PTW-ELE',
       category: 'GENERAL',
-      name: 'Electrical & LOTO Isolation Permit',
+      docNo: 'BAL-JTRWF-SAF-PTW-005',
+      name: 'Electrical Work & LOTO Permit',
       validity: 12,
+      hasIsolationRecord: true,
       prerequisites: [
-        'Positive padlocking and Danger LOTO tag placed on main breaker/isolator',
-        'Zero Energy Test physically tested and verified with calibrated voltmeter',
-        'Discharge earthing applied and lockout keys secured in multi-lock hasp box',
-        'Arc flash PPE 40 Cal/cm² and insulated rubber matting verified'
+        'Electrical RA/JSA and switching plan available',
+        'Competent authorised electrical personnel assigned',
+        'All supply sources including backfeed identified',
+        'Isolation carried out by authorised electrical person',
+        'Lockout and tagout applied at identified breaker points',
+        'Absence of voltage tested with approved calibrated tester',
+        'Tester proved before and after test on known live source',
+        'Stored energy discharged / earthing applied as required',
+        'Barriers and Danger warning notices installed',
+        'Adjacent live parts protected with insulating mats',
+        'Re-energisation and handback process agreed'
       ]
     },
     {
-      code: 'PTW-T06',
+      code: 'PTW-MHI',
       category: 'GENERAL',
+      docNo: 'BAL-JTRWF-SAF-PTW-006',
       name: 'Mechanical / Hydraulic Isolation Permit',
       validity: 10,
+      hasIsolationRecord: true,
       prerequisites: [
-        'Hydraulic pressure line completely depressurised and gauge reads 0 Bar',
-        'Mechanical positive physical locking pins / safety chocks inserted under ram',
-        'Fluid isolation valves closed, chained, locked and drain valves tagged open',
-        'All stored accumulator and counterweight energy fully dissipated'
+        'Approved isolation plan and RA/JSA available',
+        'All energy sources identified (hydraulic/pneumatic/gravity)',
+        'Machine stopped and secured against restart',
+        'Associated electrical energy isolated as required',
+        'Hydraulic / pneumatic pressure safely released (gauge reads 0 Bar)',
+        'Accumulators and stored energy addressed and drained',
+        'Raised / suspended components mechanically chocked / pinned',
+        'Gravity movement and rotating parts physically restrained',
+        'Zero-energy state verified by competent person',
+        'Locks / tags and warning notices applied',
+        'Safe reinstatement sequence defined'
       ]
     },
     {
-      code: 'PTW-T07',
+      code: 'PTW-LFT',
       category: 'GENERAL',
-      name: 'Heavy Lifting & Rigging Permit',
+      docNo: 'BAL-JTRWF-SAF-PTW-007',
+      name: 'Lifting & Rigging Permit',
       validity: 10,
+      hasLiftingRecord: true,
       prerequisites: [
-        'Rigging plan, load weight calculation, and crane capacity chart approved',
-        'Crane / Hydra third-party inspection (Form 11) certificate valid and verified',
-        'Lifting wire ropes, bow shackles, and web slings inspected with valid color code',
-        'Certified Rigging Supervisor and single designated banksman assigned',
-        '10-Meter lifting radius completely barricaded and clear of personnel'
-      ]
-    },
-    {
-      code: 'PTW-T08',
-      category: 'GENERAL',
-      name: 'Excavation & Ground Breaking Permit',
-      validity: 12,
-      prerequisites: [
-        'Underground utility clearance (cables, gas, water lines) cable-detector scanned',
-        'Trench shoring or safe 45-degree batter angle inspected by civil lead',
-        'Escape ladders placed at least every 7.5 meters along excavation trench',
-        'Perimeter rigid guardrails and blinking night warning lamps installed'
-      ]
-    },
-    {
-      code: 'PTW-T09',
-      category: 'GENERAL',
-      name: 'Line Breaking / Pipeline Opening Permit',
-      validity: 6,
-      prerequisites: [
-        'Line isolated, depressurized, drained, flushed, and purged safely',
-        'First flange bolts loosened facing AWAY from technician bodies',
-        'Chemical splash suit, chemical goggles, and full face shield donned',
-        'Drip trays and emergency chemical neutralizing absorbent ready beneath'
-      ]
-    },
-    {
-      code: 'PTW-T10',
-      category: 'HEIGHT WORK',
-      name: 'Roof Access & Fragile Surface Permit',
-      validity: 8,
-      prerequisites: [
-        'Crawling boards and staging walkways laid across roof purlins',
-        'Static lifeline anchored to structural steel members along entire route',
-        'Fall arrest inertia blocks connected to worker full-body harnesses',
-        'Weather check confirmed: Wind speed < 32 km/h and zero precipitation'
+        'Approved lifting plan and task risk assessment available',
+        'Load weight and centre of gravity (COG) verified',
+        'Crane capacity checked for radius and boom configuration',
+        'Crane inspection / statutory Form 11 documents valid',
+        'Operator competency and heavy equipment licence verified',
+        'Rigger and single designated signalman competency verified',
+        'Slings, shackles, hooks and accessories inspected (valid color code)',
+        'Sling angles and rigging arrangement checked by competent person',
+        'Ground condition, outrigger support and load spreader mats verified',
+        'Weather / wind limits checked (<32 km/h)',
+        'Trial lift and radio communication method agreed',
+        'Exclusion zone (10M radius) and tag-line arrangements established'
       ]
     }
   ]

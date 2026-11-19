@@ -2,25 +2,155 @@
  * BALSONS SAFETY PORTAL - PTW SERVICE
  * Module 05: Permit-to-Work (PTW) Lifecycle Management
  * Architecture: BALSONS-SAM-2026 (Locked Baseline)
+ * Based on Controlled Library: BALSONS_JTRWF_PTW_FORMS_V1_1_SEVEN_PERMITS
  * Project: Jupiter Tatravagonka Railwheel Factory (JTRWF), Khordha, Odisha
  */
 
 var PtwService = {
   
   /**
-   * 10 Standard PTW Templates mapped to 4 Master Categories
+   * 7 Controlled Operational PTW Templates (V1.1 Controlled Library)
    */
   TEMPLATES: {
-    'PTW-T01': { category: 'GENERAL', name: 'General Cold Work Permit', validity: 12, prerequisites: ['JSA Attached', 'Basic Mandatory PPE', 'Work Area Barricading', 'Emergency Contact Identified'] },
-    'PTW-T02': { category: 'HOT WORK', name: 'Hot Work & Welding Permit', validity: 8, prerequisites: ['Dedicated Fire Watch Assigned', '10kg DCP Fire Extinguisher at Site', 'Gas Test 0% LEL & Combustible Cleared 10M', 'Welding Machine Grounded / ELCB Fitted', 'Fire Blanket Screen Erected'] },
-    'PTW-T03': { category: 'HEIGHT WORK', name: 'Work at Height Permit (>1.8M)', validity: 10, prerequisites: ['Full Body Double-Lanyard Harness with Shock Absorber', '100% Tie-Off Anchor Point Verified (>22kN)', 'Green Tagged Certified Scaffolding / Man-Basket', 'Safety Net / Static Lifeline Installed', 'Tool Lanyard / Falling Object Prevention'] },
-    'PTW-T04': { category: 'CONFINED SPACE', name: 'Confined Space Entry Permit', validity: 8, prerequisites: ['Atmospheric Gas Test (O2: 19.5%-23.5%, CO < 25ppm, H2S < 10ppm, LEL 0%)', 'Continuous Forced Air Mechanical Ventilation', 'Dedicated Standby Rescue Attendant with Logbook', 'Tripod Retrieval Winch & Full Body Harness', 'Intrinsically Safe 24V Lighting'] },
-    'PTW-T05': { category: 'GENERAL', name: 'Electrical & LOTO Isolation Permit', validity: 12, prerequisites: ['Positive Lockout & Danger Tag Placed at Breaker', 'Zero Energy Test Verified with Calibrated Meter', 'Discharge Earth Applied & Padlock Key Secured', 'Arc Flash PPE 40 Cal/cm2 for High Voltage'] },
-    'PTW-T06': { category: 'GENERAL', name: 'Mechanical / Hydraulic Isolation Permit', validity: 10, prerequisites: ['Hydraulic Pressure Depressurised to 0 Bar', 'Mechanical Positive Pin / Blocking Lock Inserted', 'All Fluid Supply Lines Closed & Tagged', 'Residual Energy Dissipated'] },
-    'PTW-T07': { category: 'GENERAL', name: 'Heavy Lifting & Rigging Permit', validity: 10, prerequisites: ['Approved Rigging Plan & Load Weight Calculation', 'Crane / Hydra Valid Form 11 TPI Fitness Certificate', 'Lifting Slings, Bow Shackles & Webbing TPI Inspected', 'Certified Rigging Supervisor & Signalman Assigned', '10-Meter Lifting Radius Barricaded & Cleared'] },
-    'PTW-T08': { category: 'GENERAL', name: 'Excavation & Ground Breaking Permit', validity: 12, prerequisites: ['Underground Power Cable / Water Pipe Clearance Scan', 'Trench Shoring / 45-Degree Batter Slope Inspected', 'Access Ladders Every 7.5M for Safe Egress', 'Excavation Perimeter Handrail Barricade & Warning Signage'] },
-    'PTW-T09': { category: 'GENERAL', name: 'Line Breaking / Pipeline Opening Permit', validity: 6, prerequisites: ['Line Depressurized, Drained and Flushed', 'Flange Bolts Loosened Away from Personnel Direction', 'Chemical / Splash Face Shield & Chemical Suit Used', 'Catchment Basin / Secondary Containment Positioned'] },
-    'PTW-T10': { category: 'HEIGHT WORK', name: 'Roof Access & Fragile Surface Permit', validity: 8, prerequisites: ['Crawling Boards / Roof Walkways Laid', 'Permanent Static Lifeline Anchored to Purlins', 'Fall Arrester Blocks / Inertia Reels Connected', 'High Wind Speed (<32 km/h) & Rain Clearance Checked'] }
+    'PTW-GEN': {
+      category: 'GENERAL',
+      code: 'PTW-GEN',
+      name: 'General Work Permit',
+      validity: 12,
+      docNo: 'BAL-JTRWF-SAF-PTW-001',
+      prerequisites: [
+        'Approved RA/JSA and method statement available',
+        'Work area inspected and safe for planned activity',
+        'Personnel briefed and competent for assigned task',
+        'Required PPE available and worn',
+        'Tools and equipment inspected and fit for use',
+        'Access, lighting and housekeeping adequate',
+        'Barricading / warning signage installed where required',
+        'Emergency arrangements and communication understood',
+        'Nearby operations and interfaces reviewed',
+        'Required supporting permits / isolations identified'
+      ]
+    },
+    'PTW-HOT': {
+      category: 'HOT WORK',
+      code: 'PTW-HOT',
+      name: 'Hot Work Permit',
+      validity: 8,
+      docNo: 'BAL-JTRWF-SAF-PTW-002',
+      prerequisites: [
+        'Hot work RA/JSA and method statement approved',
+        'Combustibles removed or protected (10m radius)',
+        'Flammable atmosphere checked (0% LEL)',
+        'Gas cylinders upright and secured as required',
+        'Hoses, regulators and flashback arrestors inspected',
+        'Suitable fire extinguisher accessible (10kg DCP)',
+        'Fire watch assigned and briefed with whistle',
+        'Screens / spark containment fire blanket installed',
+        'Adjacent areas checked for fire exposure',
+        'Post-work fire watch duration defined (min 30 mins)',
+        'Hot work equipment isolated and removed after completion'
+      ]
+    },
+    'PTW-HT': {
+      category: 'HEIGHT WORK',
+      code: 'PTW-HT',
+      name: 'Work at Height Permit',
+      validity: 10,
+      docNo: 'BAL-JTRWF-SAF-PTW-003',
+      prerequisites: [
+        'Work-at-height RA/JSA approved',
+        'Safe platform / access selected',
+        'Scaffold / platform inspected and tagged (Green Tag)',
+        'Ladders suitable, tied-off and secured',
+        'Harness, double lanyard and connectors inspected',
+        'Anchor / lifeline suitability verified by competent person (>22kN)',
+        'Dropped-object controls and exclusion zone established',
+        'Tools and materials secured against falling with tool lanyards',
+        'Weather conditions acceptable (wind speed < 32 km/h, no rain)',
+        'Rescue plan, trained rescuers and equipment available'
+      ]
+    },
+    'PTW-CSE': {
+      category: 'CONFINED SPACE',
+      code: 'PTW-CSE',
+      name: 'Confined Space Entry Permit',
+      validity: 8,
+      docNo: 'BAL-JTRWF-SAF-PTW-004',
+      prerequisites: [
+        'Confined-space classification and RA approved',
+        'Energy and material sources isolated and verified (LOTO)',
+        'Space cleaned / purged / ventilated as specified',
+        'Atmosphere tested by authorised competent person',
+        'Oxygen (19.5%-23.5%), flammable (0% LEL) and toxic readings recorded',
+        'Continuous / periodic forced-air ventilation confirmed',
+        'Standby attendant present outside entry and communication tested',
+        'Entrants trained, medically fit and logged',
+        'Suitable 24V explosion-proof lighting, tools and PPE available',
+        'Rescue tripod winch, harness and breathing apparatus ready',
+        'Entry / exit headcount register maintained'
+      ]
+    },
+    'PTW-ELE': {
+      category: 'GENERAL',
+      code: 'PTW-ELE',
+      name: 'Electrical Work & LOTO Permit',
+      validity: 12,
+      docNo: 'BAL-JTRWF-SAF-PTW-005',
+      prerequisites: [
+        'Electrical RA/JSA and switching plan available',
+        'Competent authorised electrical personnel assigned',
+        'All supply sources including backfeed identified',
+        'Isolation carried out by authorised electrical person',
+        'Lockout and tagout applied at identified breaker points',
+        'Absence of voltage tested with approved calibrated tester',
+        'Tester proved before and after test on known live source',
+        'Stored energy discharged / earthing applied as required',
+        'Barriers and Danger warning notices installed',
+        'Adjacent live parts protected with insulating mats',
+        'Re-energisation and handback process agreed'
+      ]
+    },
+    'PTW-MHI': {
+      category: 'GENERAL',
+      code: 'PTW-MHI',
+      name: 'Mechanical / Hydraulic Isolation Permit',
+      validity: 10,
+      docNo: 'BAL-JTRWF-SAF-PTW-006',
+      prerequisites: [
+        'Approved isolation plan and RA/JSA available',
+        'All energy sources identified (hydraulic/pneumatic/gravity)',
+        'Machine stopped and secured against restart',
+        'Associated electrical energy isolated as required',
+        'Hydraulic / pneumatic pressure safely released (gauge reads 0 Bar)',
+        'Accumulators and stored energy addressed and drained',
+        'Raised / suspended components mechanically chocked / pinned',
+        'Gravity movement and rotating parts physically restrained',
+        'Zero-energy state verified by competent person',
+        'Locks / tags and warning notices applied',
+        'Safe reinstatement sequence defined'
+      ]
+    },
+    'PTW-LFT': {
+      category: 'GENERAL',
+      code: 'PTW-LFT',
+      name: 'Lifting & Rigging Permit',
+      validity: 10,
+      docNo: 'BAL-JTRWF-SAF-PTW-007',
+      prerequisites: [
+        'Approved lifting plan and task risk assessment available',
+        'Load weight and centre of gravity (COG) verified',
+        'Crane capacity checked for radius and boom configuration',
+        'Crane inspection / statutory Form 11 documents valid',
+        'Operator competency and heavy equipment licence verified',
+        'Rigger and single designated signalman competency verified',
+        'Slings, shackles, hooks and accessories inspected (valid color code)',
+        'Sling angles and rigging arrangement checked by competent person',
+        'Ground condition, outrigger support and load spreader mats verified',
+        'Weather / wind limits checked (<32 km/h)',
+        'Trial lift and radio communication method agreed',
+        'Exclusion zone (10M radius) and tag-line arrangements established'
+      ]
+    }
   },
 
   /**
@@ -63,17 +193,15 @@ var PtwService = {
    * Create a new Permit to Work (Stage 1: Work Supervisor Submission)
    */
   createPermit: function(data, actor) {
-    var template = this.TEMPLATES[data.templateCode];
-    if (!template) {
-      throw new Error('Invalid PTW Template: ' + data.templateCode);
-    }
+    var templateCode = data.templateCode || 'PTW-GEN';
+    var template = this.TEMPLATES[templateCode] || this.TEMPLATES['PTW-GEN'];
 
     var permitId = 'PTW-JTRWF-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
     var now = new Date().toISOString();
     
     var record = {
       PermitID: permitId,
-      TemplateCode: data.templateCode,
+      TemplateCode: template.code,
       Category: template.category,
       AreaCode: data.areaCode || 'AREA-01',
       WorkDescription: data.workDescription || template.name,
@@ -85,7 +213,8 @@ var PtwService = {
       Status: 'SUBMITTED',
       IssuedTimestamp: '',
       ClosedTimestamp: '',
-      PrerequisitesChecked: JSON.stringify(data.prerequisites || template.prerequisites)
+      PrerequisitesChecked: JSON.stringify(data.prerequisites || template.prerequisites),
+      TechnicalData: JSON.stringify(data.technicalData || {})
     };
 
     try {
@@ -110,7 +239,7 @@ var PtwService = {
         ]);
       }
 
-      this.logApprovalStep(permitId, 'SUBMISSION', 'SUBMITTED', actor ? actor.fullName : 'Supervisor', 'Work Supervisor', 'Work requested with verified checklist prerequisites');
+      this.logApprovalStep(permitId, 'SUBMISSION', 'SUBMITTED', actor ? actor.fullName : 'Supervisor', 'Work Supervisor', 'Work requested per controlled template ' + template.code);
       AuditService.log(actor ? actor.fullName : 'System', 'Work Supervisor', 'CREATE_PTW', permitId, 'SUCCESS', 'Permit created for ' + template.name);
     } catch (e) {
       Logger.log('Sheet append skipped: ' + e.message);
@@ -125,7 +254,7 @@ var PtwService = {
   verifyPermit: function(permitId, verificationData, actor) {
     var status = 'VERIFIED_BY_SAFETY';
     this.updatePermitStatus(permitId, status);
-    this.logApprovalStep(permitId, 'SAFETY_VERIFICATION', 'VERIFIED', actor ? actor.fullName : 'Bikram Patra', 'Safety Officer', verificationData.comments || 'On-site safety precautions physically inspected & verified.');
+    this.logApprovalStep(permitId, 'SAFETY_VERIFICATION', 'VERIFIED', actor ? actor.fullName : 'Bikram Patra', 'Safety Officer', verificationData.comments || 'On-site physical safety precautions inspected & verified.');
     AuditService.log(actor ? actor.fullName : 'Safety Officer', 'Safety Officer', 'VERIFY_PTW', permitId, 'SUCCESS', 'Physical safety conditions validated.');
     return { permitId: permitId, status: status, message: 'Permit verified by Safety Officer. Forwarded to Site Manager for Final Authorization.' };
   },
@@ -137,7 +266,7 @@ var PtwService = {
     var status = 'ISSUED';
     var now = new Date().toISOString();
     this.updatePermitStatus(permitId, status, { IssuedTimestamp: now });
-    this.logApprovalStep(permitId, 'SITE_MANAGER_AUTHORISATION', 'APPROVED', actor ? actor.fullName : 'Gajendra Rao', 'Site Manager / Safety Head', approvalData.comments || 'Full work authorisation granted. Proceed with work strictly per approved JSA.');
+    this.logApprovalStep(permitId, 'SITE_MANAGER_AUTHORISATION', 'APPROVED', actor ? actor.fullName : 'Gajendra Rao', 'Site Manager / Safety Head', approvalData.comments || 'Work authorisation granted. Work permitted strictly per approved JSA.');
     AuditService.log(actor ? actor.fullName : 'Site Manager', 'Site Manager', 'APPROVE_PTW', permitId, 'SUCCESS', 'Permit officially issued to site.');
     return { permitId: permitId, status: status, issuedTimestamp: now, message: 'PTW Officially Issued and Active on Site.' };
   },
@@ -178,7 +307,6 @@ var PtwService = {
       var data = sheet.getDataRange().getValues();
       for (var i = 1; i < data.length; i++) {
         if (data[i][0] === permitId) {
-          // Status is Column 11 (index 10)
           sheet.getRange(i + 1, 11).setValue(status);
           if (extraFields && extraFields.IssuedTimestamp) {
             sheet.getRange(i + 1, 12).setValue(extraFields.IssuedTimestamp);
@@ -221,13 +349,13 @@ var PtwService = {
   },
 
   /**
-   * Seed Mock PTW records for demonstration and offline reliability
+   * Seed Mock PTW records mapped to official 7 controlled forms
    */
   getSeedPermits: function(filter) {
     var seeds = [
       {
         PermitID: 'PTW-JTRWF-2026-1001',
-        TemplateCode: 'PTW-T07',
+        TemplateCode: 'PTW-LFT',
         Category: 'GENERAL',
         AreaCode: 'AREA-01',
         WorkDescription: 'Heavy Tandem Lift of Schuler 1600T Forging Press Bed',
@@ -239,11 +367,12 @@ var PtwService = {
         Status: 'ISSUED',
         IssuedTimestamp: '2026-11-19T07:45:00Z',
         ClosedTimestamp: '',
-        PrerequisitesChecked: '["Rigging Plan Approved", "Form 11 Valid", "Exclusion Zone 10M", "Rigger TPI Certified"]'
+        PrerequisitesChecked: '["Approved lifting plan and task risk assessment available", "Load weight and centre of gravity (COG) verified", "Crane capacity checked for radius and boom configuration", "Crane inspection / statutory Form 11 documents valid", "Operator competency and heavy equipment licence verified", "Rigger and single designated signalman competency verified", "Slings, shackles, hooks and accessories inspected", "Exclusion zone (10M radius) and tag-line arrangements established"]',
+        TechnicalData: '{"loadWeight":"145T", "craneCapacity":"190T", "radius":"9.5M", "utilization":"76.3%"}'
       },
       {
         PermitID: 'PTW-JTRWF-2026-1002',
-        TemplateCode: 'PTW-T03',
+        TemplateCode: 'PTW-HT',
         Category: 'HEIGHT WORK',
         AreaCode: 'AREA-02',
         WorkDescription: 'Erection of Overhead EOT Crane Girders at +14.5M Elevation',
@@ -255,11 +384,12 @@ var PtwService = {
         Status: 'VERIFIED_BY_SAFETY',
         IssuedTimestamp: '',
         ClosedTimestamp: '',
-        PrerequisitesChecked: '["Full Body Harness Double Lanyard", "Lifeline Inspected", "Scaffold Green Tagged"]'
+        PrerequisitesChecked: '["Work-at-height RA/JSA approved", "Safe platform / access selected", "Scaffold / platform inspected and tagged (Green Tag)", "Harness, double lanyard and connectors inspected", "Anchor / lifeline suitability verified (>22kN)", "Dropped-object controls and exclusion zone established"]',
+        TechnicalData: '{"elevation":"+14.5M", "accessType":"Certified Modular Scaffold & Static Lifeline"}'
       },
       {
         PermitID: 'PTW-JTRWF-2026-1003',
-        TemplateCode: 'PTW-T02',
+        TemplateCode: 'PTW-HOT',
         Category: 'HOT WORK',
         AreaCode: 'AREA-04',
         WorkDescription: 'Welding and Thermal Cutting of Heavy Anchor Stool Plates',
@@ -271,11 +401,12 @@ var PtwService = {
         Status: 'SUBMITTED',
         IssuedTimestamp: '',
         ClosedTimestamp: '',
-        PrerequisitesChecked: '["Fire Watch Assigned", "10kg DCP Present", "Gas Test 0% LEL"]'
+        PrerequisitesChecked: '["Hot work RA/JSA and method statement approved", "Combustibles removed or protected (10m radius)", "Flammable atmosphere checked (0% LEL)", "Fire watch assigned and briefed with whistle", "Suitable fire extinguisher accessible (10kg DCP)", "Screens / spark containment fire blanket installed"]',
+        TechnicalData: '{"fireWatch":"Bikash Nayak", "extinguisher":"2x 10kg DCP", "postWatchMinutes":30}'
       },
       {
         PermitID: 'PTW-JTRWF-2026-1004',
-        TemplateCode: 'PTW-T04',
+        TemplateCode: 'PTW-CSE',
         Category: 'CONFINED SPACE',
         AreaCode: 'AREA-03',
         WorkDescription: 'Internal Hydraulic Pit Degreasing and Inspection',
@@ -287,7 +418,8 @@ var PtwService = {
         Status: 'CLOSED',
         IssuedTimestamp: '2026-11-18T10:50:00Z',
         ClosedTimestamp: '2026-11-18T16:45:00Z',
-        PrerequisitesChecked: '["Gas Test O2 20.9%", "Standby Attendant Present", "Tripod Winch Tested"]'
+        PrerequisitesChecked: '["Confined-space classification and RA approved", "Energy and material sources isolated (LOTO)", "Atmosphere tested by authorised competent person", "Oxygen, flammable and toxic readings recorded", "Standby attendant present outside entry", "Rescue tripod winch and harness ready"]',
+        TechnicalData: '{"gasTest":{"o2":"20.9%","lel":"0%","co":"0ppm","h2s":"0ppm"}, "standby":"Pradeep Jena"}'
       }
     ];
 

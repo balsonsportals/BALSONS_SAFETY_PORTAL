@@ -10,7 +10,7 @@ const BalsonsSafetyApi = {
     permits: [
       {
         PermitID: 'PTW-JTRWF-2026-1001',
-        TemplateCode: 'PTW-T07',
+        TemplateCode: 'PTW-LFT',
         Category: 'GENERAL',
         AreaCode: 'AREA-01',
         WorkDescription: 'Heavy Tandem Lift of Schuler 1600T Forging Press Bed',
@@ -22,11 +22,12 @@ const BalsonsSafetyApi = {
         Status: 'ISSUED',
         IssuedTimestamp: '2026-11-19T07:45:00Z',
         ClosedTimestamp: '',
-        PrerequisitesChecked: '["Rigging Plan Approved", "Form 11 Valid", "Exclusion Zone 10M", "Rigger TPI Certified"]'
+        PrerequisitesChecked: '["Approved lifting plan and task risk assessment available", "Load weight and centre of gravity (COG) verified", "Crane capacity checked for radius and boom configuration", "Crane inspection / statutory Form 11 documents valid", "Operator competency and heavy equipment licence verified", "Rigger and single designated signalman competency verified", "Slings, shackles, hooks and accessories inspected", "Exclusion zone (10M radius) and tag-line arrangements established"]',
+        TechnicalData: '{"loadWeight":"145.0 Tons", "craneCapacity":"190.0 Tons", "radius":"9.5 Meters", "utilization":"76.3%"}'
       },
       {
         PermitID: 'PTW-JTRWF-2026-1002',
-        TemplateCode: 'PTW-T03',
+        TemplateCode: 'PTW-HT',
         Category: 'HEIGHT WORK',
         AreaCode: 'AREA-02',
         WorkDescription: 'Erection of Overhead EOT Crane Girders at +14.5M Elevation',
@@ -38,11 +39,12 @@ const BalsonsSafetyApi = {
         Status: 'VERIFIED_BY_SAFETY',
         IssuedTimestamp: '',
         ClosedTimestamp: '',
-        PrerequisitesChecked: '["Full Body Harness Double Lanyard", "Lifeline Inspected", "Scaffold Green Tagged"]'
+        PrerequisitesChecked: '["Work-at-height RA/JSA approved", "Safe platform / access selected", "Scaffold / platform inspected and tagged (Green Tag)", "Harness, double lanyard and connectors inspected", "Anchor / lifeline suitability verified (>22kN)", "Dropped-object controls and exclusion zone established"]',
+        TechnicalData: '{"elevation":"+14.5M", "accessType":"Certified Modular Scaffold & Static Lifeline"}'
       },
       {
         PermitID: 'PTW-JTRWF-2026-1003',
-        TemplateCode: 'PTW-T02',
+        TemplateCode: 'PTW-HOT',
         Category: 'HOT WORK',
         AreaCode: 'AREA-04',
         WorkDescription: 'Welding and Thermal Cutting of Heavy Anchor Stool Plates',
@@ -54,11 +56,12 @@ const BalsonsSafetyApi = {
         Status: 'SUBMITTED',
         IssuedTimestamp: '',
         ClosedTimestamp: '',
-        PrerequisitesChecked: '["Fire Watch Assigned", "10kg DCP Present", "Gas Test 0% LEL"]'
+        PrerequisitesChecked: '["Hot work RA/JSA and method statement approved", "Combustibles removed or protected (10m radius)", "Flammable atmosphere checked (0% LEL)", "Fire watch assigned and briefed with whistle", "Suitable fire extinguisher accessible (10kg DCP)", "Screens / spark containment fire blanket installed"]',
+        TechnicalData: '{"fireWatch":"Bikash Nayak", "extinguisher":"2x 10kg DCP", "postWatchMinutes":30}'
       },
       {
         PermitID: 'PTW-JTRWF-2026-1004',
-        TemplateCode: 'PTW-T04',
+        TemplateCode: 'PTW-CSE',
         Category: 'CONFINED SPACE',
         AreaCode: 'AREA-03',
         WorkDescription: 'Internal Hydraulic Pit Degreasing and Inspection',
@@ -70,7 +73,8 @@ const BalsonsSafetyApi = {
         Status: 'CLOSED',
         IssuedTimestamp: '2026-11-18T10:50:00Z',
         ClosedTimestamp: '2026-11-18T16:45:00Z',
-        PrerequisitesChecked: '["Gas Test O2 20.9%", "Standby Attendant Present", "Tripod Winch Tested"]'
+        PrerequisitesChecked: '["Confined-space classification and RA approved", "Energy and material sources isolated (LOTO)", "Atmosphere tested by authorised competent person", "Oxygen, flammable and toxic readings recorded", "Standby attendant present outside entry", "Rescue tripod winch and harness ready"]',
+        TechnicalData: '{"gasTest":{"o2":"20.9%","lel":"0%","co":"0ppm","h2s":"0ppm"}, "standby":"Pradeep Jena"}'
       }
     ],
     tbts: [

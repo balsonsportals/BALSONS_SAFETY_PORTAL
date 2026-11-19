@@ -293,13 +293,16 @@ const BalsonsSafetyApp = {
   },
 
   // ==========================================
-  // OFFICIAL PRINTABLE A4 PERMIT MODAL
+  // OFFICIAL PRINTABLE A4 PERMIT MODAL (V1.1 CONTROLLED SPECIFICATION)
   // ==========================================
   viewPermitPrint: function(permitId) {
-    const permit = this.cachedPermits.find(p => p.PermitID === permitId);
+    if (!this.cachedPermits || this.cachedPermits.length === 0) {
+      this.cachedPermits = BalsonsSafetyApi._localStore.permits;
+    }
+    const permit = this.cachedPermits.find(p => p.PermitID === permitId) || this.cachedPermits[0];
     if (!permit) return;
 
-    const tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === permit.TemplateCode) || { prerequisites: [] };
+    const tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === permit.TemplateCode) || BALSONS_SAFETY_CONFIG.PTW_TEMPLATES[0];
     let prereqs = [];
     try {
       prereqs = JSON.parse(permit.PrerequisitesChecked);
@@ -307,91 +310,223 @@ const BalsonsSafetyApp = {
       prereqs = tmpl.prerequisites || [];
     }
 
+    let techData = {};
+    try {
+      techData = JSON.parse(permit.TechnicalData || '{}');
+    } catch (e) {
+      techData = {};
+    }
+
     const modalBody = document.getElementById('ptw-print-content');
     if (!modalBody) return;
 
+    // Build Section 04 dynamic content based on permit form
+    let sec04Html = '';
+    if (tmpl.code === 'PTW-CSE' || tmpl.category === 'CONFINED SPACE') {
+      sec04Html = `
+        <div class="permit-section-heading">04  ATMOSPHERIC TEST RECORD</div>
+        <table class="permit-spec-table">
+          <thead>
+            <tr style="background: #E5E7EB; font-weight: 700;">
+              <td>TEST TIME</td>
+              <td>O₂ % (19.5% - 23.5%)</td>
+              <td>LEL % (0%)</td>
+              <td>TOXIC GAS / READING</td>
+              <td>AUTHORISED TESTER</td>
+              <td>INSTRUMENT ID</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Before Entry</td>
+              <td><strong>20.9%</strong></td>
+              <td><strong>0%</strong></td>
+              <td>CO: 0 ppm | H₂S: 0 ppm</td>
+              <td>Bikram Patra (Safety Off.)</td>
+              <td>CAL-GAS-2026-88 (Valid)</td>
+            </tr>
+            <tr>
+              <td>During Work (Continuous)</td>
+              <td><strong>20.8%</strong></td>
+              <td><strong>0%</strong></td>
+              <td>CO: 0 ppm | H₂S: 0 ppm</td>
+              <td>Bikram Patra (Safety Off.)</td>
+              <td>CAL-GAS-2026-88 (Valid)</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    } else if (tmpl.code === 'PTW-ELE' || tmpl.code === 'PTW-MHI') {
+      sec04Html = `
+        <div class="permit-section-heading">04  ISOLATION VERIFICATION RECORD (LOTO)</div>
+        <table class="permit-spec-table">
+          <tr>
+            <td style="width: 25%;"><strong>Isolation Point / Tag No:</strong></td>
+            <td style="width: 25%; font-family: monospace;">${techData.isolationPoint || 'SWB-MAIN-MCC-B3 / LOTO-042'}</td>
+            <td style="width: 25%;"><strong>Lock Reference / Padlock No:</strong></td>
+            <td style="width: 25%; font-family: monospace;">${techData.lockRef || 'PL-BAL-7714'}</td>
+          </tr>
+          <tr>
+            <td><strong>Verified By:</strong></td>
+            <td>${techData.isolatedBy || 'Authorised Electrical Lead'}</td>
+            <td><strong>Verification Date & Time:</strong></td>
+            <td>${this.formatDateTime(permit.PlannedStart)}</td>
+          </tr>
+          <tr>
+            <td><strong>Zero-Energy State Confirmed:</strong></td>
+            <td><strong style="color: #059669;">☑ YES  [ ] NO (0.00 Volts / 0.0 Bar)</strong></td>
+            <td><strong>Independent Check Conducted:</strong></td>
+            <td><strong style="color: #059669;">☑ YES  [ ] NO</strong></td>
+          </tr>
+        </table>
+      `;
+    } else if (tmpl.code === 'PTW-LFT') {
+      sec04Html = `
+        <div class="permit-section-heading">04  LIFTING CONFIGURATION RECORD</div>
+        <table class="permit-spec-table">
+          <tr>
+            <td style="width: 25%;"><strong>Load Weight:</strong></td>
+            <td style="width: 25%; font-weight: 700;">${techData.loadWeight || '145.0 Tons'}</td>
+            <td style="width: 25%;"><strong>Operating Radius:</strong></td>
+            <td style="width: 25%; font-weight: 700;">${techData.radius || '9.5 Meters'}</td>
+          </tr>
+          <tr>
+            <td><strong>Crane Capacity at Radius:</strong></td>
+            <td><strong>${techData.craneCapacity || '190.0 Tons'}</strong></td>
+            <td><strong>Utilisation / Safety Margin:</strong></td>
+            <td><span class="badge badge-info">${techData.utilization || '76.3%'} (&lt; 80% Safe Limit)</span></td>
+          </tr>
+          <tr>
+            <td><strong>Rigging Accessories Form 11:</strong></td>
+            <td colspan="3">Wire Ropes TPI-WR-8842 (SWL 65T) · Bow Shackles Green Pin 55T TPI-BS-9102 · Tag Lines Rigged</td>
+          </tr>
+        </table>
+      `;
+    }
+
     modalBody.innerHTML = `
       <div class="a4-permit-document">
+        <!-- Control Header -->
         <div class="permit-doc-header">
           <div class="permit-logo-section">
             <img src="assets/images/balsons-logo.png" alt="BALSONS" style="height: 48px; object-fit: contain;">
           </div>
-          <div class="permit-title-section text-center">
+          <div class="permit-title-section text-center" style="flex: 1; padding: 0 16px;">
             <div class="permit-org-title">BALSONS HEAVY LIFT & SHIFT</div>
-            <div class="permit-doc-heading">PERMIT-TO-WORK AUTHORISATION CERTIFICATE</div>
+            <div class="permit-doc-heading">PERMIT TO WORK — ${tmpl.name.toUpperCase()}</div>
             <div class="permit-project-sub">Project: JUPITER TATRAVAGONKA RAILWHEEL FACTORY (JTRWF) · KHORDHA, ODISHA</div>
+            <div style="font-size: 9.5px; color: #6B7280; margin-top: 2px;">
+              Doc No: <strong>${tmpl.docNo || 'BAL-JTRWF-SAF-PTW-001'}</strong> · Revision: <strong>V1.1 – CONTROLLED</strong>
+            </div>
           </div>
-          <div class="permit-meta-box">
-            <div><strong>PERMIT NO:</strong> <span class="font-mono text-primary">${permit.PermitID}</span></div>
-            <div><strong>CATEGORY:</strong> ${permit.Category}</div>
-            <div><strong>STATUS:</strong> ${permit.Status}</div>
+          <div class="permit-meta-box" style="text-align: right; font-size: 11px;">
+            <div><strong>PERMIT NO:</strong> <span class="font-mono text-primary font-bold">${permit.PermitID}</span></div>
+            <div><strong>FORM CODE:</strong> <span class="badge badge-neutral font-mono font-bold">${tmpl.code}</span></div>
+            <div><strong>STATUS:</strong> ${this.getStatusBadge(permit.Status)}</div>
           </div>
         </div>
 
+        <!-- Section 01: Work Request & Applicant Details -->
+        <div class="permit-section-heading">01  WORK REQUEST AND APPLICANT DETAILS</div>
         <table class="permit-spec-table">
           <tr>
-            <td style="width: 25%;"><strong>Work Template:</strong></td>
-            <td style="width: 25%;">${permit.TemplateCode}</td>
-            <td style="width: 25%;"><strong>Work Area:</strong></td>
-            <td style="width: 25%;"><strong>${permit.AreaCode}</strong></td>
+            <td style="width: 25%;"><strong>Applicant / Supervisor:</strong></td>
+            <td style="width: 25%;"><strong>${permit.SupervisorID}</strong></td>
+            <td style="width: 25%;"><strong>Contractor / Department:</strong></td>
+            <td style="width: 25%;">${permit.Contractor}</td>
           </tr>
           <tr>
-            <td><strong>Executing Contractor:</strong></td>
-            <td>${permit.Contractor}</td>
-            <td><strong>Work Supervisor:</strong></td>
-            <td>${permit.SupervisorID}</td>
+            <td><strong>Designated Work Area:</strong></td>
+            <td><strong class="text-primary">${permit.AreaCode}</strong></td>
+            <td><strong>Work Workforce (Persons):</strong></td>
+            <td>8 Persons (TBT Briefed)</td>
           </tr>
           <tr>
-            <td><strong>Planned Start Time:</strong></td>
+            <td><strong>Work Start (Date / Time):</strong></td>
             <td>${this.formatDateTime(permit.PlannedStart)}</td>
-            <td><strong>Planned Completion:</strong></td>
+            <td><strong>Work End (Date / Time):</strong></td>
             <td>${this.formatDateTime(permit.PlannedEnd)}</td>
-          </tr>
-          <tr>
-            <td><strong>Scope Description:</strong></td>
-            <td colspan="3"><strong>${permit.WorkDescription}</strong></td>
-          </tr>
-          <tr>
-            <td><strong>Assessed Risk Rating:</strong></td>
-            <td colspan="3"><span class="badge ${permit.RiskLevel === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}">${permit.RiskLevel} RISK ACTIVITY</span></td>
           </tr>
         </table>
 
-        <div class="permit-section-heading">MANDATORY PRE-WORK SAFETY PREREQUISITES & PHYSICAL CONTROLS VERIFIED</div>
-        <div class="permit-prereq-list">
+        <!-- Section 02: Task-Specific Information -->
+        <div class="permit-section-heading">02  TASK-SPECIFIC INFORMATION</div>
+        <table class="permit-spec-table">
+          <tr>
+            <td style="width: 25%;"><strong>Scope / Task Description:</strong></td>
+            <td colspan="3"><strong>${permit.WorkDescription}</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Approved Risk Assessment / JSA:</strong></td>
+            <td>JSA-JTRWF-${permit.AreaCode}-2026</td>
+            <td><strong>Assessed Risk Rating:</strong></td>
+            <td><span class="badge ${permit.RiskLevel === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}">${permit.RiskLevel} RISK</span></td>
+          </tr>
+        </table>
+
+        <!-- Section 03: Safety Verification Checklist -->
+        <div class="permit-section-heading">03  SAFETY VERIFICATION CHECKLIST (MANDATORY PHYSICAL CONTROLS)</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px;">
           ${prereqs.map((pr, idx) => `
-            <div class="permit-prereq-item">
-              <span class="prereq-box">☑</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #F9FAFB; border: 1px solid #E5E7EB; padding: 4px 8px; font-size: 10px;">
               <span><strong>Item ${idx + 1}:</strong> ${pr}</span>
+              <span style="font-weight: 800; color: #059669; font-family: monospace; white-space: nowrap; margin-left: 6px;">[☑] Y  [ ] N</span>
             </div>
           `).join('')}
         </div>
 
+        <!-- Section 04: Specialized Technical Record (If applicable) -->
+        ${sec04Html}
+
+        <!-- Section 05: Hazards & Controls Summary -->
+        <div class="permit-section-heading">05  HAZARDS, CONTROLS AND EMERGENCY ARRANGEMENTS</div>
+        <table class="permit-spec-table">
+          <tr>
+            <td style="width: 25%;"><strong>Identified Hazards:</strong></td>
+            <td style="width: 75%;">Pinch points, suspended load swing, work at elevation, line-of-fire risks.</td>
+          </tr>
+          <tr>
+            <td><strong>Mandatory Controls:</strong></td>
+            <td>Tag lines deployed, 100% harness tie-off, 10M radial barricading, single designated signalman.</td>
+          </tr>
+          <tr>
+            <td><strong>Emergency Communication:</strong></td>
+            <td>Emergency Sirens / Radios tested. Site Medic Hotline: +91 97760 XXXXX · Fire Station: 0674-XXXXXXX.</td>
+          </tr>
+        </table>
+
+        <!-- Section 06: Applicant Declaration & 3-Tier Sequential Sign-Off -->
+        <div class="permit-section-heading">06  APPLICANT DECLARATION & SEQUENTIAL APPROVAL SIGN-OFF</div>
         <div class="permit-signatures-grid">
           <div class="sig-card">
             <div class="sig-role">STAGE 1: WORK SUPERVISOR</div>
             <div class="sig-name">${permit.SupervisorID}</div>
-            <div class="sig-line">Verified JSA & Checklist Prerequisites</div>
-            <div class="sig-stamp">SUBMITTED & SIGNED</div>
+            <div class="sig-line">JSA Briefed & Checklist Verified</div>
+            <div class="sig-stamp">SUBMITTED & SIGNED ✓</div>
           </div>
           <div class="sig-card">
             <div class="sig-role">STAGE 2: SAFETY OFFICER</div>
             <div class="sig-name">Bikram Patra (Safety Officer)</div>
-            <div class="sig-line">Physical Worksite Inspection Conducted</div>
-            <div class="sig-stamp">${permit.Status === 'SUBMITTED' ? 'AWAITING' : 'VERIFIED ✓'}</div>
+            <div class="sig-line">Physical Worksite Inspected</div>
+            <div class="sig-stamp">${permit.Status === 'SUBMITTED' ? 'PENDING VERIFICATION' : 'VERIFIED ✓'}</div>
           </div>
           <div class="sig-card">
-            <div class="sig-role">STAGE 3: SITE MANAGER / HEAD</div>
+            <div class="sig-role">STAGE 3: AUTHORISED SITE MANAGER</div>
             <div class="sig-name">Gajendra Rao (Safety / Site Mgr)</div>
-            <div class="sig-line">Final Authorisation & Official Permit Issue</div>
-            <div class="sig-stamp">${permit.Status === 'ISSUED' || permit.Status === 'CLOSED' ? 'AUTHORISED ✓' : 'PENDING'}</div>
+            <div class="sig-line">Full Authorisation & Permit Issue</div>
+            <div class="sig-stamp">${permit.Status === 'ISSUED' || permit.Status === 'CLOSED' ? 'AUTHORISED & ISSUED ✓' : 'AWAITING APPROVAL'}</div>
           </div>
           <div class="sig-card">
-            <div class="sig-role">STAGE 4: PERMIT HANDBACK / CLOSURE</div>
-            <div class="sig-name">${permit.Status === 'CLOSED' ? 'Work Completed' : 'Pending Completion'}</div>
-            <div class="sig-line">Area Cleaned, Isolations Lifted, Safe</div>
-            <div class="sig-stamp">${permit.Status === 'CLOSED' ? 'CLOSED & ARCHIVED' : 'OPEN'}</div>
+            <div class="sig-role">STAGE 4: WORK COMPLETION & HANDBACK</div>
+            <div class="sig-name">${permit.Status === 'CLOSED' ? 'Work Completed' : 'Pending Work End'}</div>
+            <div class="sig-line">Site Cleared, Locks Lifted, Safe</div>
+            <div class="sig-stamp">${permit.Status === 'CLOSED' ? 'HANDED BACK & CLOSED' : 'IN EXECUTION'}</div>
           </div>
+        </div>
+
+        <!-- Section 07: Work Restoration & Handback Summary -->
+        <div style="background: #F3F4F6; border: 1px solid #D1D5DB; padding: 6px 10px; font-size: 9.5px; margin-top: 8px;">
+          <strong>07  WORK RESTORATION DECLARATION:</strong> All personnel withdrawn. Housekeeping restored, all tools and tackles cleared. Isolation devices removed and equipment restored to operational custody. Worksite left 100% clean and safe.
         </div>
 
         <div class="permit-footer-disclaimer">
