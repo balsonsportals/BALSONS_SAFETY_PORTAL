@@ -75,15 +75,58 @@ const BalsonsSafetyApp = {
   },
 
   // ==========================================
-  // NAVIGATION & MODULE ROUTING
+  // NAVIGATION & MODULE ROUTING (SMART DROPDOWNS, LOCKED TAB BAR, NO SCROLLBAR)
   // ==========================================
   initNavigation: function() {
-    const tabs = document.querySelectorAll('.beds-nav-tab');
-    tabs.forEach(tab => {
+    // 1. Dropdown Toggle Buttons
+    const dropdownToggles = document.querySelectorAll('.beds-dropdown-toggle');
+    dropdownToggles.forEach(toggle => {
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const parent = toggle.closest('.beds-nav-dropdown');
+        const wasOpen = parent.classList.contains('open');
+        // Close all open dropdowns
+        document.querySelectorAll('.beds-nav-dropdown').forEach(d => d.classList.remove('open'));
+        if (!wasOpen) {
+          parent.classList.add('open');
+        }
+      });
+    });
+
+    // Close dropdowns on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.beds-nav-dropdown')) {
+        document.querySelectorAll('.beds-nav-dropdown').forEach(d => d.classList.remove('open'));
+      }
+    });
+
+    // Close dropdowns on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.beds-nav-dropdown').forEach(d => d.classList.remove('open'));
+      }
+    });
+
+    // 2. Direct Nav Tabs (Dashboard, etc.)
+    document.querySelectorAll('button.beds-nav-tab[data-target]').forEach(tab => {
       tab.addEventListener('click', (e) => {
         e.preventDefault();
         const targetView = tab.getAttribute('data-target');
         if (targetView) {
+          document.querySelectorAll('.beds-nav-dropdown').forEach(d => d.classList.remove('open'));
+          this.switchView(targetView);
+        }
+      });
+    });
+
+    // 3. Dropdown Menu Items
+    document.querySelectorAll('.beds-dropdown-item[data-target]').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetView = item.getAttribute('data-target');
+        if (targetView) {
+          document.querySelectorAll('.beds-nav-dropdown').forEach(d => d.classList.remove('open'));
           this.switchView(targetView);
         }
       });
@@ -93,8 +136,8 @@ const BalsonsSafetyApp = {
   switchView: function(viewId) {
     this.currentView = viewId;
     
-    // Update tabs
-    document.querySelectorAll('.beds-nav-tab').forEach(t => {
+    // Update direct nav tabs
+    document.querySelectorAll('button.beds-nav-tab[data-target]').forEach(t => {
       if (t.getAttribute('data-target') === viewId) {
         t.classList.add('active');
       } else {
@@ -102,7 +145,28 @@ const BalsonsSafetyApp = {
       }
     });
 
-    // Update views
+    // Update smart dropdown toggle buttons and dropdown items
+    document.querySelectorAll('.beds-nav-dropdown').forEach(dropdown => {
+      const hasActiveChild = dropdown.querySelector(`.beds-dropdown-item[data-target="${viewId}"]`);
+      const toggleBtn = dropdown.querySelector('.beds-dropdown-toggle');
+      if (toggleBtn) {
+        if (hasActiveChild) {
+          toggleBtn.classList.add('active');
+        } else {
+          toggleBtn.classList.remove('active');
+        }
+      }
+
+      dropdown.querySelectorAll('.beds-dropdown-item').forEach(item => {
+        if (item.getAttribute('data-target') === viewId) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    });
+
+    // Update view panels
     document.querySelectorAll('.beds-view-panel').forEach(v => {
       if (v.id === viewId) {
         v.classList.add('active');
@@ -118,6 +182,9 @@ const BalsonsSafetyApp = {
         break;
       case 'view-ptw':
         this.loadPermits();
+        break;
+      case 'view-permit-studio':
+        this.renderPermitStudio();
         break;
       case 'view-tbt':
         this.loadTbts();
@@ -293,8 +360,66 @@ const BalsonsSafetyApp = {
   },
 
   // ==========================================
-  // OFFICIAL PRINTABLE A4 PERMIT MODAL (V1.1 CONTROLLED SPECIFICATION)
+  // BALSONS CONTROLLED 7 PERMIT FORMS STUDIO & OFFICIAL A4 GENERATOR
+  // Reference: BALSONS_JTRWF_PTW_FORMS_V1_1_SEVEN_PERMITS.docx
   // ==========================================
+  currentStudioFormCode: 'PTW-GEN',
+
+  renderPermitStudio: function(selectedCode) {
+    if (selectedCode) {
+      this.currentStudioFormCode = selectedCode;
+    }
+    const currentCode = this.currentStudioFormCode;
+    const templates = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES;
+
+    // 1. Render Selector Pill Bar
+    const selectorContainer = document.getElementById('permit-studio-selector');
+    if (selectorContainer) {
+      selectorContainer.innerHTML = templates.map(t => {
+        const isActive = t.code === currentCode;
+        return `
+          <button class="beds-btn ${isActive ? 'beds-btn-primary' : 'beds-btn-secondary'}" 
+                  onclick="BalsonsSafetyApp.renderPermitStudio('${t.code}')" 
+                  style="font-size: 11.5px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <strong style="font-family: monospace;">${t.code}</strong>
+            <span>${t.name}</span>
+            <span style="font-size: 9.5px; opacity: 0.85; font-family: monospace; background: rgba(0,0,0,0.12); padding: 1px 5px; border-radius: 3px;">
+              ${t.docNo}
+            </span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // 2. Render Authentic A4 Document
+    const formContainer = document.getElementById('studio-rendered-form');
+    if (formContainer) {
+      const tmpl = templates.find(t => t.code === currentCode) || templates[0];
+      formContainer.innerHTML = this.buildOfficialA4PermitHtml(tmpl, true);
+    }
+  },
+
+  printStudioForm: function() {
+    const tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === this.currentStudioFormCode) || BALSONS_SAFETY_CONFIG.PTW_TEMPLATES[0];
+    const modalBody = document.getElementById('ptw-print-content');
+    if (modalBody) {
+      modalBody.innerHTML = this.buildOfficialA4PermitHtml(tmpl, true);
+      const modal = document.getElementById('modal-permit-print');
+      if (modal) modal.classList.add('active');
+    }
+  },
+
+  initiatePermitFromStudio: function() {
+    const code = this.currentStudioFormCode || 'PTW-GEN';
+    const modal = document.getElementById('modal-ptw-create');
+    const select = document.getElementById('ptw-form-template');
+    if (select) {
+      select.value = code;
+      this.renderPrerequisitesChecklist(code);
+    }
+    if (modal) modal.classList.add('active');
+  },
+
   viewPermitPrint: function(permitId) {
     if (!this.cachedPermits || this.cachedPermits.length === 0) {
       this.cachedPermits = BalsonsSafetyApi._localStore.permits;
@@ -302,111 +427,263 @@ const BalsonsSafetyApp = {
     const permit = this.cachedPermits.find(p => p.PermitID === permitId) || this.cachedPermits[0];
     if (!permit) return;
 
-    const tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === permit.TemplateCode) || BALSONS_SAFETY_CONFIG.PTW_TEMPLATES[0];
-    let prereqs = [];
-    try {
-      prereqs = JSON.parse(permit.PrerequisitesChecked);
-    } catch (e) {
-      prereqs = tmpl.prerequisites || [];
-    }
-
-    let techData = {};
-    try {
-      techData = JSON.parse(permit.TechnicalData || '{}');
-    } catch (e) {
-      techData = {};
-    }
-
     const modalBody = document.getElementById('ptw-print-content');
     if (!modalBody) return;
 
-    // Build Section 04 dynamic content based on permit form
+    modalBody.innerHTML = this.buildOfficialA4PermitHtml(permit, false);
+    const modal = document.getElementById('modal-permit-print');
+    if (modal) modal.classList.add('active');
+  },
+
+  buildOfficialA4PermitHtml: function(item, isBlank) {
+    let tmpl, permit;
+    if (isBlank) {
+      tmpl = item;
+      permit = {
+        PermitID: 'BAL-JTRWF-PTW-______',
+        Status: 'CONTROLLED FORM',
+        SupervisorID: '________________________',
+        Contractor: 'BALSONS HEAVY LIFT & SHIFT',
+        AreaCode: 'AREA-01 / 02 / 03 / 04',
+        RiskLevel: tmpl.code === 'PTW-CSE' || tmpl.code === 'PTW-LFT' ? 'CRITICAL' : 'HIGH',
+        WorkDescription: `Execution of approved work scope under controlled conditions in accordance with BALSONS safety procedures and JTRWF site safety manual.`,
+        PlannedStart: new Date().toISOString(),
+        PlannedEnd: new Date(Date.now() + (tmpl.validity || 8) * 3600000).toISOString()
+      };
+    } else {
+      permit = item;
+      tmpl = BALSONS_SAFETY_CONFIG.PTW_TEMPLATES.find(t => t.code === permit.TemplateCode) || BALSONS_SAFETY_CONFIG.PTW_TEMPLATES[0];
+    }
+
+    const prereqs = tmpl.prerequisites || [];
+    let techData = {};
+    if (!isBlank && permit.TechnicalData) {
+      try { techData = JSON.parse(permit.TechnicalData); } catch (e) { techData = {}; }
+    }
+
+    // Build Section 04 dynamic content based on form type (All 7 forms from docx)
     let sec04Html = '';
-    if (tmpl.code === 'PTW-CSE' || tmpl.category === 'CONFINED SPACE') {
+    if (tmpl.code === 'PTW-CSE') {
+      // Confined Space: Atmospheric Gas Test Record (Table 27 in docx)
       sec04Html = `
-        <div class="permit-section-heading">04  ATMOSPHERIC TEST RECORD</div>
+        <div class="permit-section-heading">04  ATMOSPHERIC GAS TEST RECORD (MANDATORY BEFORE ENTRY & CONTINUOUS)</div>
         <table class="permit-spec-table">
           <thead>
             <tr style="background: #E5E7EB; font-weight: 700;">
-              <td>TEST TIME</td>
-              <td>O₂ % (19.5% - 23.5%)</td>
-              <td>LEL % (0%)</td>
-              <td>TOXIC GAS / READING</td>
-              <td>AUTHORISED TESTER</td>
-              <td>INSTRUMENT ID</td>
+              <td style="width: 18%;">TEST TIME</td>
+              <td style="width: 16%;">O₂ % (19.5% - 23.5%)</td>
+              <td style="width: 15%;">LEL % (0%)</td>
+              <td style="width: 22%;">TOXIC GAS (CO &lt;25ppm, H₂S &lt;10ppm)</td>
+              <td style="width: 15%;">TESTER NAME</td>
+              <td style="width: 14%;">SIGNATURE</td>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Before Entry</td>
-              <td><strong>20.9%</strong></td>
-              <td><strong>0%</strong></td>
-              <td>CO: 0 ppm | H₂S: 0 ppm</td>
-              <td>Bikram Patra (Safety Off.)</td>
-              <td>CAL-GAS-2026-88 (Valid)</td>
+              <td>${isBlank ? 'Before Entry: ____:____ hrs' : 'Before Entry: 08:30 hrs'}</td>
+              <td><strong>${isBlank ? '____ %' : '20.9%'}</strong></td>
+              <td><strong>${isBlank ? '____ %' : '0%'}</strong></td>
+              <td>${isBlank ? 'CO: ___ ppm | H₂S: ___ ppm' : 'CO: 0 ppm | H₂S: 0 ppm (Safe)'}</td>
+              <td>${isBlank ? '________________' : 'Bikram Patra'}</td>
+              <td>${isBlank ? '________' : 'Signed ✓'}</td>
             </tr>
             <tr>
-              <td>During Work (Continuous)</td>
-              <td><strong>20.8%</strong></td>
-              <td><strong>0%</strong></td>
-              <td>CO: 0 ppm | H₂S: 0 ppm</td>
-              <td>Bikram Patra (Safety Off.)</td>
-              <td>CAL-GAS-2026-88 (Valid)</td>
+              <td>${isBlank ? 'During Work: ____:____ hrs' : 'During Work: 11:30 hrs'}</td>
+              <td><strong>${isBlank ? '____ %' : '20.8%'}</strong></td>
+              <td><strong>${isBlank ? '____ %' : '0%'}</strong></td>
+              <td>${isBlank ? 'CO: ___ ppm | H₂S: ___ ppm' : 'CO: 0 ppm | H₂S: 0 ppm (Safe)'}</td>
+              <td>${isBlank ? '________________' : 'Bikram Patra'}</td>
+              <td>${isBlank ? '________' : 'Signed ✓'}</td>
+            </tr>
+            <tr>
+              <td>${isBlank ? 'After Break: ____:____ hrs' : 'After Break: 14:00 hrs'}</td>
+              <td><strong>${isBlank ? '____ %' : '20.9%'}</strong></td>
+              <td><strong>${isBlank ? '____ %' : '0%'}</strong></td>
+              <td>${isBlank ? 'CO: ___ ppm | H₂S: ___ ppm' : 'CO: 0 ppm | H₂S: 0 ppm (Safe)'}</td>
+              <td>${isBlank ? '________________' : 'Bikram Patra'}</td>
+              <td>${isBlank ? '________' : 'Signed ✓'}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="font-size: 9.5px; color: #4B5563; margin-top: -6px; margin-bottom: 8px;">
+          Calibrated Multi-Gas Detector ID: <strong>CAL-GAS-JTRWF-2026-88</strong> · Calibration Validity: <strong>2026-12-31</strong> · Continuous forced-air ventilation active.
+        </div>
+      `;
+    } else if (tmpl.code === 'PTW-ELE') {
+      // Electrical Work & LOTO Record (Table 35 in docx)
+      sec04Html = `
+        <div class="permit-section-heading">04  ELECTRICAL ISOLATION & LOTO VERIFICATION RECORD</div>
+        <table class="permit-spec-table">
+          <thead>
+            <tr style="background: #E5E7EB; font-weight: 700;">
+              <td>ISOLATION POINT / BREAKER ID</td>
+              <td>TAG NO</td>
+              <td>LOCK NO</td>
+              <td>PROVED DEAD (0.00V)</td>
+              <td>EARTHING APPLIED</td>
+              <td>ISOLATED BY</td>
+              <td>SIGNATURE</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-family: monospace;">${isBlank ? 'SWB-MAIN-MCC-B3' : (techData.isolationPoint || 'SWB-MAIN-MCC-B3 / FEEDER-04')}</td>
+              <td style="font-family: monospace;">${isBlank ? 'TAG-BAL-8812' : 'TAG-BAL-8812'}</td>
+              <td style="font-family: monospace;">${isBlank ? 'PL-BAL-7714' : (techData.lockRef || 'PL-BAL-7714')}</td>
+              <td><strong style="color: #059669;">☑ YES (0.00 V)</strong></td>
+              <td><strong>☑ YES (Portable Earth)</strong></td>
+              <td>${isBlank ? 'Authorised Electrical Lead' : (techData.isolatedBy || 'Authorised Electrical Lead')}</td>
+              <td>${isBlank ? '________' : 'Signed ✓'}</td>
+            </tr>
+            <tr>
+              <td style="font-family: monospace;">${isBlank ? 'AUX-CONTROL-PNL-02' : 'AUX-CONTROL-PNL-02 / 110V DC'}</td>
+              <td style="font-family: monospace;">${isBlank ? 'TAG-BAL-8813' : 'TAG-BAL-8813'}</td>
+              <td style="font-family: monospace;">${isBlank ? 'PL-BAL-7715' : 'PL-BAL-7715'}</td>
+              <td><strong style="color: #059669;">☑ YES (0.00 V)</strong></td>
+              <td><strong>☑ YES (Control Earth)</strong></td>
+              <td>${isBlank ? 'Authorised Electrical Lead' : (techData.isolatedBy || 'Authorised Electrical Lead')}</td>
+              <td>${isBlank ? '________' : 'Signed ✓'}</td>
             </tr>
           </tbody>
         </table>
       `;
-    } else if (tmpl.code === 'PTW-ELE' || tmpl.code === 'PTW-MHI') {
+    } else if (tmpl.code === 'PTW-MHI') {
+      // Mechanical / Hydraulic Isolation Record (Table 43 in docx)
       sec04Html = `
-        <div class="permit-section-heading">04  ISOLATION VERIFICATION RECORD (LOTO)</div>
+        <div class="permit-section-heading">04  MECHANICAL & HYDRAULIC ISOLATION RECORD (ZERO-ENERGY VERIFICATION)</div>
         <table class="permit-spec-table">
-          <tr>
-            <td style="width: 25%;"><strong>Isolation Point / Tag No:</strong></td>
-            <td style="width: 25%; font-family: monospace;">${techData.isolationPoint || 'SWB-MAIN-MCC-B3 / LOTO-042'}</td>
-            <td style="width: 25%;"><strong>Lock Reference / Padlock No:</strong></td>
-            <td style="width: 25%; font-family: monospace;">${techData.lockRef || 'PL-BAL-7714'}</td>
-          </tr>
-          <tr>
-            <td><strong>Verified By:</strong></td>
-            <td>${techData.isolatedBy || 'Authorised Electrical Lead'}</td>
-            <td><strong>Verification Date & Time:</strong></td>
-            <td>${this.formatDateTime(permit.PlannedStart)}</td>
-          </tr>
-          <tr>
-            <td><strong>Zero-Energy State Confirmed:</strong></td>
-            <td><strong style="color: #059669;">☑ YES  [ ] NO (0.00 Volts / 0.0 Bar)</strong></td>
-            <td><strong>Independent Check Conducted:</strong></td>
-            <td><strong style="color: #059669;">☑ YES  [ ] NO</strong></td>
-          </tr>
+          <thead>
+            <tr style="background: #E5E7EB; font-weight: 700;">
+              <td>EQUIPMENT / HYDRAULIC UNIT</td>
+              <td>ISOLATION METHOD</td>
+              <td>VALVE / PIN TAG</td>
+              <td>LOCK NO</td>
+              <td>GAUGE READING</td>
+              <td>BLEED VERIFIED</td>
+              <td>SIGNATURE</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1600T Schuler Main Hydraulic Ram</td>
+              <td>Double Block & Bleed + Mechanical Safety Pin</td>
+              <td style="font-family: monospace;">VALVE-HYD-ISO-01</td>
+              <td style="font-family: monospace;">PL-MHI-9921</td>
+              <td><strong style="color: #059669;">0.0 Bar (Zero Energy)</strong></td>
+              <td><strong>☑ Drained & Locked</strong></td>
+              <td>${isBlank ? '________' : 'Signed ✓'}</td>
+            </tr>
+            <tr>
+              <td>Auxiliary Nitrogen Accumulator Bank</td>
+              <td>Isolate Valve Closed & Residual Vented</td>
+              <td style="font-family: monospace;">VALVE-N2-ACC-03</td>
+              <td style="font-family: monospace;">PL-MHI-9922</td>
+              <td><strong style="color: #059669;">0.0 Bar (Depressurised)</strong></td>
+              <td><strong>☑ Blinding Tagged</strong></td>
+              <td>${isBlank ? '________' : 'Signed ✓'}</td>
+            </tr>
+          </tbody>
         </table>
       `;
     } else if (tmpl.code === 'PTW-LFT') {
+      // Heavy Lifting & Rigging Configuration Record (Table 51 in docx)
       sec04Html = `
-        <div class="permit-section-heading">04  LIFTING CONFIGURATION RECORD</div>
+        <div class="permit-section-heading">04  CRITICAL LIFTING & RIGGING CONFIGURATION RECORD</div>
         <table class="permit-spec-table">
           <tr>
-            <td style="width: 25%;"><strong>Load Weight:</strong></td>
-            <td style="width: 25%; font-weight: 700;">${techData.loadWeight || '145.0 Tons'}</td>
-            <td style="width: 25%;"><strong>Operating Radius:</strong></td>
-            <td style="width: 25%; font-weight: 700;">${techData.radius || '9.5 Meters'}</td>
+            <td style="width: 25%;"><strong>Load Description & Verified Weight:</strong></td>
+            <td style="width: 25%; font-weight: 700;">${isBlank ? '______ Tons (Tare Verified)' : (techData.loadWeight || '145.0 Tons (Press Bed)')}</td>
+            <td style="width: 25%;"><strong>Operating Working Radius:</strong></td>
+            <td style="width: 25%; font-weight: 700;">${isBlank ? '______ Meters' : (techData.radius || '9.5 Meters')}</td>
           </tr>
           <tr>
-            <td><strong>Crane Capacity at Radius:</strong></td>
-            <td><strong>${techData.craneCapacity || '190.0 Tons'}</strong></td>
-            <td><strong>Utilisation / Safety Margin:</strong></td>
-            <td><span class="badge badge-info">${techData.utilization || '76.3%'} (&lt; 80% Safe Limit)</span></td>
+            <td><strong>Crane Model & Capacity:</strong></td>
+            <td>${isBlank ? 'Terex Demag CC-2800 (600T)' : 'Terex Demag CC-2800 (600T Crawler)'}</td>
+            <td><strong>Boom Length & Angle:</strong></td>
+            <td>${isBlank ? '48.0 M Main Boom @ 72°' : '48.0 M Main Boom @ 72°'}</td>
           </tr>
           <tr>
-            <td><strong>Rigging Accessories Form 11:</strong></td>
-            <td colspan="3">Wire Ropes TPI-WR-8842 (SWL 65T) · Bow Shackles Green Pin 55T TPI-BS-9102 · Tag Lines Rigged</td>
+            <td><strong>Rated Crane Capacity at Radius:</strong></td>
+            <td><strong>${isBlank ? '______ Tons' : (techData.craneCapacity || '190.0 Tons')}</strong></td>
+            <td><strong>Calculated Utilisation Margin:</strong></td>
+            <td><span class="badge badge-info">${isBlank ? '&lt; 80% Safe Limit' : (techData.utilization || '76.3%') + ' (&lt; 80% Safe Limit)'}</span></td>
+          </tr>
+          <tr>
+            <td><strong>Rigging Slings & Shackles:</strong></td>
+            <td colspan="3">Wire Rope Slings TPI-WR-8842 (SWL 65T × 4) · Bow Shackles Green Pin 55T (Valid TPI Form 11) · Heavy Timber Outrigger Spreader Mats Inspected.</td>
+          </tr>
+        </table>
+      `;
+    } else if (tmpl.code === 'PTW-HOT') {
+      // Hot Work Specific Record
+      sec04Html = `
+        <div class="permit-section-heading">04  HOT WORK & FIRE WATCH VERIFICATION RECORD</div>
+        <table class="permit-spec-table">
+          <tr>
+            <td style="width: 25%;"><strong>Hot Work Activity Type:</strong></td>
+            <td style="width: 25%;">[☑] Electric Arc Welding  [ ] Gas Cutting  [☑] Grinding</td>
+            <td style="width: 25%;"><strong>Flammable Atmosphere (LEL):</strong></td>
+            <td style="width: 25%;"><strong style="color: #059669;">0% LEL (Verified Safe)</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Dedicated Fire Watch Person:</strong></td>
+            <td>${isBlank ? '__________________ (Briefed)' : 'Ramesh Kumar (Equipped & Briefed)'}</td>
+            <td><strong>Extinguisher On Standby:</strong></td>
+            <td>10kg DCP (Hydro-test Valid 2026-10)</td>
+          </tr>
+          <tr>
+            <td><strong>Spark Containment Measures:</strong></td>
+            <td colspan="3">Fire Retardant Blankets installed beneath cutting zone · 10M radial area cleared of all combustibles · Post-work 30-min fire monitoring mandatory.</td>
+          </tr>
+        </table>
+      `;
+    } else if (tmpl.code === 'PTW-HT') {
+      // Work at Height Specific Record
+      sec04Html = `
+        <div class="permit-section-heading">04  WORK AT HEIGHT & FALL ARREST VERIFICATION RECORD</div>
+        <table class="permit-spec-table">
+          <tr>
+            <td style="width: 25%;"><strong>Work Elevation Above Ground:</strong></td>
+            <td style="width: 25%;"><strong>${isBlank ? '______ Meters' : '12.5 Meters'}</strong></td>
+            <td style="width: 25%;"><strong>Access Equipment Type:</strong></td>
+            <td style="width: 25%;">Cuplok Scaffolding with Green Tag</td>
+          </tr>
+          <tr>
+            <td><strong>Scaffold Green Tag Ref:</strong></td>
+            <td>TAG-SCAF-JTRWF-2026-118</td>
+            <td><strong>Lifeline Anchor Point Rating:</strong></td>
+            <td><strong style="color: #059669;">&gt; 22 kN (Certified Structural Anchor)</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Fall Arrest & Dropped Objects:</strong></td>
+            <td colspan="3">Full Body Harness with Twin Shock-Absorbing Lanyards (100% Tie-Off) · Tool lanyards secured · 10M exclusion zone barricaded below.</td>
+          </tr>
+        </table>
+      `;
+    } else {
+      // General Work Record
+      sec04Html = `
+        <div class="permit-section-heading">04  TASK INTERFACE & ENGINEERING CONTROLS RECORD</div>
+        <table class="permit-spec-table">
+          <tr>
+            <td style="width: 25%;"><strong>Adjacent Activity Coordination:</strong></td>
+            <td style="width: 25%;"><strong style="color: #059669;">Cleared (No Clashing Ops)</strong></td>
+            <td style="width: 25%;"><strong>Barricading & Warning Signs:</strong></td>
+            <td style="width: 25%;"><strong style="color: #059669;">10M Radial Zone Enforced</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Portable Power Tools Tagging:</strong></td>
+            <td>Quarterly Color Tag (Green - Tested)</td>
+            <td><strong>Illumination Level:</strong></td>
+            <td>&gt; 150 Lux at Working Plane</td>
           </tr>
         </table>
       `;
     }
 
-    modalBody.innerHTML = `
+    return `
       <div class="a4-permit-document">
-        <!-- Control Header -->
+        <!-- Control Header matching BALSONS docx -->
         <div class="permit-doc-header">
           <div class="permit-logo-section">
             <img src="assets/images/balsons-logo.png" alt="BALSONS" style="height: 48px; object-fit: contain;">
@@ -416,13 +693,13 @@ const BalsonsSafetyApp = {
             <div class="permit-doc-heading">PERMIT TO WORK — ${tmpl.name.toUpperCase()}</div>
             <div class="permit-project-sub">Project: JUPITER TATRAVAGONKA RAILWHEEL FACTORY (JTRWF) · KHORDHA, ODISHA</div>
             <div style="font-size: 9.5px; color: #6B7280; margin-top: 2px;">
-              Doc No: <strong>${tmpl.docNo || 'BAL-JTRWF-SAF-PTW-001'}</strong> · Revision: <strong>V1.1 – CONTROLLED</strong>
+              Doc No: <strong>${tmpl.docNo || 'BAL-JTRWF-SAF-PTW-001'}</strong> · Revision: <strong>V1.1 – CONTROLLED</strong> · Validity: <strong>${tmpl.validity || 8} Hours</strong>
             </div>
           </div>
           <div class="permit-meta-box" style="text-align: right; font-size: 11px;">
             <div><strong>PERMIT NO:</strong> <span class="font-mono text-primary font-bold">${permit.PermitID}</span></div>
             <div><strong>FORM CODE:</strong> <span class="badge badge-neutral font-mono font-bold">${tmpl.code}</span></div>
-            <div><strong>STATUS:</strong> ${this.getStatusBadge(permit.Status)}</div>
+            <div><strong>STATUS:</strong> ${isBlank ? '<span class="badge badge-neutral font-mono font-bold">CONTROLLED MASTER FORM</span>' : this.getStatusBadge(permit.Status)}</div>
           </div>
         </div>
 
@@ -439,104 +716,127 @@ const BalsonsSafetyApp = {
             <td><strong>Designated Work Area:</strong></td>
             <td><strong class="text-primary">${permit.AreaCode}</strong></td>
             <td><strong>Work Workforce (Persons):</strong></td>
-            <td>8 Persons (TBT Briefed)</td>
+            <td>${isBlank ? '____ Persons (TBT Briefed)' : '8 Persons (TBT Briefed)'}</td>
           </tr>
           <tr>
             <td><strong>Work Start (Date / Time):</strong></td>
-            <td>${this.formatDateTime(permit.PlannedStart)}</td>
+            <td>${isBlank ? '____ / ____ / 2026   ____:____ hrs' : this.formatDateTime(permit.PlannedStart)}</td>
             <td><strong>Work End (Date / Time):</strong></td>
-            <td>${this.formatDateTime(permit.PlannedEnd)}</td>
+            <td>${isBlank ? '____ / ____ / 2026   ____:____ hrs' : this.formatDateTime(permit.PlannedEnd)}</td>
           </tr>
         </table>
 
         <!-- Section 02: Task-Specific Information -->
-        <div class="permit-section-heading">02  TASK-SPECIFIC INFORMATION</div>
+        <div class="permit-section-heading">02  TASK-SPECIFIC INFORMATION & WORK SCOPE</div>
         <table class="permit-spec-table">
           <tr>
-            <td style="width: 25%;"><strong>Scope / Task Description:</strong></td>
+            <td style="width: 25%;"><strong>Detailed Task Scope:</strong></td>
             <td colspan="3"><strong>${permit.WorkDescription}</strong></td>
           </tr>
           <tr>
             <td><strong>Approved Risk Assessment / JSA:</strong></td>
-            <td>JSA-JTRWF-${permit.AreaCode}-2026</td>
+            <td>JSA-JTRWF-${isBlank ? 'AREA-XX' : permit.AreaCode}-2026-REV01</td>
             <td><strong>Assessed Risk Rating:</strong></td>
-            <td><span class="badge ${permit.RiskLevel === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}">${permit.RiskLevel} RISK</span></td>
+            <td><span class="badge ${permit.RiskLevel === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}">${permit.RiskLevel} RISK (CONTROLLED)</span></td>
           </tr>
         </table>
 
         <!-- Section 03: Safety Verification Checklist -->
-        <div class="permit-section-heading">03  SAFETY VERIFICATION CHECKLIST (MANDATORY PHYSICAL CONTROLS)</div>
+        <div class="permit-section-heading">03  SAFETY VERIFICATION CHECKLIST (MANDATORY PHYSICAL PREREQUISITES)</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 8px;">
           ${prereqs.map((pr, idx) => `
             <div style="display: flex; justify-content: space-between; align-items: center; background: #F9FAFB; border: 1px solid #E5E7EB; padding: 4px 8px; font-size: 10px;">
               <span><strong>Item ${idx + 1}:</strong> ${pr}</span>
-              <span style="font-weight: 800; color: #059669; font-family: monospace; white-space: nowrap; margin-left: 6px;">[☑] Y  [ ] N</span>
+              <span style="font-weight: 800; color: ${isBlank ? '#6B7280' : '#059669'}; font-family: monospace; white-space: nowrap; margin-left: 6px;">
+                ${isBlank ? '[ ] Y  [ ] N  [ ] N/A' : '[☑] Y  [ ] N'}
+              </span>
             </div>
           `).join('')}
         </div>
 
-        <!-- Section 04: Specialized Technical Record (If applicable) -->
+        <!-- Section 04: Specialized Technical Record -->
         ${sec04Html}
 
-        <!-- Section 05: Hazards & Controls Summary -->
-        <div class="permit-section-heading">05  HAZARDS, CONTROLS AND EMERGENCY ARRANGEMENTS</div>
+        <!-- Section 05: PPE & Emergency Equipment Requirements -->
+        <div class="permit-section-heading">05  PERSONAL PROTECTIVE EQUIPMENT (PPE) & EMERGENCY CONTROLS</div>
         <table class="permit-spec-table">
           <tr>
-            <td style="width: 25%;"><strong>Identified Hazards:</strong></td>
-            <td style="width: 75%;">Pinch points, suspended load swing, work at elevation, line-of-fire risks.</td>
+            <td style="width: 25%;"><strong>Mandatory Site PPE:</strong></td>
+            <td colspan="3">[☑] Safety Helmet (EN 397)  [☑] Steel Toe Boots (IS 15298)  [☑] High-Vis Reflective Vest  [☑] Safety Goggles</td>
           </tr>
           <tr>
-            <td><strong>Mandatory Controls:</strong></td>
-            <td>Tag lines deployed, 100% harness tie-off, 10M radial barricading, single designated signalman.</td>
+            <td><strong>Activity Specific PPE:</strong></td>
+            <td colspan="3">
+              ${tmpl.code === 'PTW-HT' ? '[☑] Full Body Harness (IS 3521 / EN 361) with Double Lanyard & Scaffold Hooks' : ''}
+              ${tmpl.code === 'PTW-HOT' ? '[☑] Leather Welding Apron & Heavy Gauntlets · Auto-darkening Welding Shield · Ear Plugs' : ''}
+              ${tmpl.code === 'PTW-CSE' ? '[☑] SCBA / Positive Pressure Airline Respirator · 24V Flameproof Inspection Torch' : ''}
+              ${tmpl.code === 'PTW-ELE' ? '[☑] Arc Flash Face Shield (40 cal/cm²) · Dielectric Insulating Gloves (Class 00-4)' : ''}
+              ${tmpl.code === 'PTW-LFT' || tmpl.code === 'PTW-GEN' || tmpl.code === 'PTW-MHI' ? '[☑] Heavy Rigging Leather Palm Gloves · Tag Line Guides · Radio Walkie-Talkies' : ''}
+            </td>
           </tr>
           <tr>
-            <td><strong>Emergency Communication:</strong></td>
-            <td>Emergency Sirens / Radios tested. Site Medic Hotline: +91 97760 XXXXX · Fire Station: 0674-XXXXXXX.</td>
+            <td><strong>Emergency Response:</strong></td>
+            <td colspan="3">Site Safety Officer: <strong>+91 94370 XXXXX</strong> · Occupational Health Centre (OHC): <strong>+91 97760 XXXXX</strong> · JTRWF Fire Control: <strong>0674-XXXXXXX</strong></td>
           </tr>
         </table>
 
-        <!-- Section 06: Applicant Declaration & 3-Tier Sequential Sign-Off -->
-        <div class="permit-section-heading">06  APPLICANT DECLARATION & SEQUENTIAL APPROVAL SIGN-OFF</div>
+        <!-- Section 06: Sequential Approval Workflow & Four-Tier Sign-Off -->
+        <div class="permit-section-heading">06  SEQUENTIAL APPROVAL WORKFLOW & FOUR-TIER AUTHORISATION SIGN-OFF</div>
         <div class="permit-signatures-grid">
           <div class="sig-card">
             <div class="sig-role">STAGE 1: WORK SUPERVISOR</div>
-            <div class="sig-name">${permit.SupervisorID}</div>
-            <div class="sig-line">JSA Briefed & Checklist Verified</div>
-            <div class="sig-stamp">SUBMITTED & SIGNED ✓</div>
+            <div class="sig-name">${isBlank ? '________________________' : permit.SupervisorID}</div>
+            <div class="sig-line">JSA Briefed & Crew Inducted</div>
+            <div class="sig-stamp">${isBlank ? '[ ] REQUEST SUBMITTED' : 'SUBMITTED & SIGNED ✓'}</div>
           </div>
           <div class="sig-card">
             <div class="sig-role">STAGE 2: SAFETY OFFICER</div>
-            <div class="sig-name">Bikram Patra (Safety Officer)</div>
-            <div class="sig-line">Physical Worksite Inspected</div>
-            <div class="sig-stamp">${permit.Status === 'SUBMITTED' ? 'PENDING VERIFICATION' : 'VERIFIED ✓'}</div>
+            <div class="sig-name">${isBlank ? 'Bikram Patra / Rakesh Swain' : 'Bikram Patra (Safety Officer)'}</div>
+            <div class="sig-line">Physical Worksite Verified</div>
+            <div class="sig-stamp">${isBlank ? '[ ] VERIFIED & ENDORSED' : (permit.Status === 'SUBMITTED' ? 'PENDING VERIFICATION' : 'VERIFIED ✓')}</div>
           </div>
           <div class="sig-card">
             <div class="sig-role">STAGE 3: AUTHORISED SITE MANAGER</div>
-            <div class="sig-name">Gajendra Rao (Safety / Site Mgr)</div>
-            <div class="sig-line">Full Authorisation & Permit Issue</div>
-            <div class="sig-stamp">${permit.Status === 'ISSUED' || permit.Status === 'CLOSED' ? 'AUTHORISED & ISSUED ✓' : 'AWAITING APPROVAL'}</div>
+            <div class="sig-name">${isBlank ? 'Gajendra Rao (Site Safety Mgr)' : 'Gajendra Rao (Safety / Site Mgr)'}</div>
+            <div class="sig-line">Full Authorisation & Issuance</div>
+            <div class="sig-stamp">${isBlank ? '[ ] AUTHORISED & ISSUED' : (permit.Status === 'ISSUED' || permit.Status === 'CLOSED' ? 'AUTHORISED & ISSUED ✓' : 'AWAITING APPROVAL')}</div>
           </div>
           <div class="sig-card">
-            <div class="sig-role">STAGE 4: WORK COMPLETION & HANDBACK</div>
-            <div class="sig-name">${permit.Status === 'CLOSED' ? 'Work Completed' : 'Pending Work End'}</div>
-            <div class="sig-line">Site Cleared, Locks Lifted, Safe</div>
-            <div class="sig-stamp">${permit.Status === 'CLOSED' ? 'HANDED BACK & CLOSED' : 'IN EXECUTION'}</div>
+            <div class="sig-role">STAGE 4: WORK SUPERVISOR ACCEPTANCE</div>
+            <div class="sig-name">${isBlank ? '________________________' : permit.SupervisorID}</div>
+            <div class="sig-line">Permit Received & Terms Briefed</div>
+            <div class="sig-stamp">${isBlank ? '[ ] PERMIT RECEIVED' : (permit.Status === 'ISSUED' || permit.Status === 'CLOSED' ? 'ACCEPTED & WORK ACTIVE ✓' : 'PENDING ISSUE')}</div>
           </div>
         </div>
 
-        <!-- Section 07: Work Restoration & Handback Summary -->
-        <div style="background: #F3F4F6; border: 1px solid #D1D5DB; padding: 6px 10px; font-size: 9.5px; margin-top: 8px;">
-          <strong>07  WORK RESTORATION DECLARATION:</strong> All personnel withdrawn. Housekeeping restored, all tools and tackles cleared. Isolation devices removed and equipment restored to operational custody. Worksite left 100% clean and safe.
-        </div>
+        <!-- Section 07: Work Handback, Housekeeping & Formal Closure Sign-Off -->
+        <div class="permit-section-heading">07  WORK COMPLETION, HOUSEKEEPING & FORMAL CLOSURE SIGN-OFF</div>
+        <table class="permit-spec-table">
+          <tr>
+            <td style="width: 25%;"><strong>Work Status at Handback:</strong></td>
+            <td style="width: 25%;">[ ] 100% Completed  [ ] Suspended  [ ] Cancelled</td>
+            <td style="width: 25%;"><strong>Housekeeping & Tools Cleared:</strong></td>
+            <td style="width: 25%;"><strong style="color: #059669;">[☑] Inspected & Safe</strong></td>
+          </tr>
+          <tr>
+            <td><strong>LOTO Locks / Isolations Removed:</strong></td>
+            <td>[☑] De-isolated & Handed Back</td>
+            <td><strong>All Personnel Evacuated:</strong></td>
+            <td>[☑] Headcount Verified Out</td>
+          </tr>
+          <tr>
+            <td><strong>Performing Supervisor Closure:</strong></td>
+            <td>Name: ${isBlank ? '________________' : permit.SupervisorID} · Sign: ________</td>
+            <td><strong>Safety Officer Final Closure:</strong></td>
+            <td>Name: Bikram Patra · Sign: ________ Date: ____/____</td>
+          </tr>
+        </table>
 
-        <div class="permit-footer-disclaimer">
-          This digital permit is strictly valid only for the specified date, time, work area, and described activity at JTRWF Khordha. Any change in site conditions, weather, or work scope renders this permit immediately void and work must halt immediately until re-authorized.
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; padding: 6px 10px; font-size: 9.5px; color: #991B1B; margin-top: 8px; font-weight: 600;">
+          ⚠️ <strong>STOP-WORK AUTHORITY:</strong> ANY BALSONS OR JTRWF PERSONNEL IS EMPOWERED AND REQUIRED TO STOP WORK IMMEDIATELY IF UNSAFE CONDITIONS, ATMOSPHERIC CHANGES, OR UNCONTROLLED RISKS ARISE. WORK CANNOT RESUME UNTIL RE-AUTHORIZED.
         </div>
       </div>
     `;
-
-    const modal = document.getElementById('modal-permit-print');
-    if (modal) modal.classList.add('active');
   },
 
   // ==========================================

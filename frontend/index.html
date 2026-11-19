@@ -73,13 +73,18 @@
       gap: 10px;
     }
 
-    /* Navigation Bar — Tab Color Rules (Black in Light Mode, White in Dark Mode) */
+    /* Navigation Bar — Locked, No Scrollbar, Tab Color Rules (Black in Light Mode, White in Dark Mode) */
     nav {
       background: var(--beds-bg-panel);
       display: flex;
-      gap: 4px;
-      padding: 6px 24px;
-      overflow-x: auto;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 24px;
+      overflow: visible !important; /* STRICTLY NO SCROLLBAR, ALLOWS DROPDOWNS */
+      white-space: normal;
+      position: sticky;
+      top: 58px; /* Locked below top header */
+      z-index: 90;
       border-bottom: 2px solid var(--beds-teal-primary);
       border-top: 1px solid var(--beds-border);
       transition: background-color var(--beds-transition), border-color var(--beds-transition);
@@ -88,7 +93,7 @@
       background: transparent;
       border: 1px solid transparent;
       color: #000000 !important; /* STRICTLY BLACK IN LIGHT MODE (USER LOCKED) */
-      padding: 8px 14px;
+      padding: 7px 13px;
       font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
@@ -98,6 +103,7 @@
       gap: 6px;
       white-space: nowrap;
       transition: all var(--beds-transition);
+      position: relative;
     }
     nav button.beds-nav-tab:hover:not(.active) {
       background: rgba(0, 151, 178, 0.08);
@@ -127,6 +133,86 @@
     [data-theme="dark"] nav button.beds-nav-tab.active {
       background: var(--beds-teal-primary) !important;
       color: #FFFFFF !important;
+    }
+
+    /* Smart Dropdown Navigation System */
+    .beds-nav-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .beds-caret {
+      font-size: 10px;
+      margin-left: 4px;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    .beds-nav-dropdown.open .beds-caret {
+      transform: rotate(180deg);
+    }
+    .beds-dropdown-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 280px;
+      background: var(--beds-bg-panel);
+      border: 1px solid var(--beds-border);
+      border-radius: var(--beds-radius-md);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+      z-index: 250;
+      padding: 6px;
+    }
+    .beds-nav-dropdown.open .beds-dropdown-menu {
+      display: block;
+      animation: dropdownSlide 0.15s ease-out;
+    }
+    @keyframes dropdownSlide {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .beds-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--beds-radius-sm);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all var(--beds-transition);
+      color: #000000 !important; /* STRICTLY BLACK IN LIGHT MODE */
+    }
+    [data-theme="dark"] .beds-dropdown-item {
+      color: #FFFFFF !important; /* STRICTLY WHITE IN DARK MODE */
+    }
+    .beds-dropdown-item:hover {
+      background: rgba(0, 151, 178, 0.08);
+      color: #000000 !important;
+    }
+    [data-theme="dark"] .beds-dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF !important;
+    }
+    .beds-dropdown-item.active {
+      background: rgba(0, 151, 178, 0.15) !important;
+      border-left: 3px solid var(--beds-teal-primary);
+    }
+    .beds-dropdown-item .item-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .beds-dropdown-item .item-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .beds-dropdown-item .item-text strong {
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .beds-dropdown-item .item-text small {
+      font-size: 10.5px;
+      color: var(--beds-text-secondary);
+      font-weight: 500;
     }
 
     /* Sub-view panels */
@@ -622,44 +708,132 @@
     </div>
   </header>
 
-  <!-- 12-Module Enterprise Navigation Bar -->
+  <!-- Smart Grouped Enterprise Navigation Bar (Locked, No Scrollbar, Dropdown Menus) -->
   <nav id="master-nav-tabs">
+    <!-- Group 1: Safety Dashboard (Direct) -->
     <button class="beds-nav-tab active" data-target="view-dashboard" data-i18n="nav_dashboard">
       📊 Safety Dashboard
     </button>
-    <button class="beds-nav-tab" data-target="view-ptw" data-i18n="nav_ptw">
-      📋 Permit-to-Work (PTW)
-    </button>
-    <button class="beds-nav-tab" data-target="view-tbt" data-i18n="nav_tbt">
-      🗣️ Toolbox Talks (TBT)
-    </button>
-    <button class="beds-nav-tab" data-target="view-inspections" data-i18n="nav_inspections">
-      🔍 Safety Inspections
-    </button>
-    <button class="beds-nav-tab" data-target="view-lifting" data-i18n="nav_lifting">
-      🏗️ Heavy Lifting & Rigging
-    </button>
-    <button class="beds-nav-tab" data-target="view-hazards" data-i18n="nav_hazards">
-      ⚠️ Hazards & UA/UC
-    </button>
-    <button class="beds-nav-tab" data-target="view-incidents" data-i18n="nav_incidents">
-      🚨 Incidents & Near Miss
-    </button>
-    <button class="beds-nav-tab" data-target="view-manpower" data-i18n="nav_manpower">
-      👷 Manpower Competency
-    </button>
-    <button class="beds-nav-tab" data-target="view-emergency" data-i18n="nav_emergency">
-      🧯 Emergency & Fire
-    </button>
-    <button class="beds-nav-tab" data-target="view-hira" data-i18n="nav_hira">
-      📑 HIRA & JSA Docs
-    </button>
-    <button class="beds-nav-tab" data-target="view-capa" data-i18n="nav_capa">
-      ✅ CAPA Register
-    </button>
-    <button class="beds-nav-tab" data-target="view-reports" data-i18n="nav_reports">
-      📈 Reports & Daily DSR
-    </button>
+
+    <!-- Group 2: Work Authorisation (PTW) Dropdown -->
+    <div class="beds-nav-dropdown">
+      <button class="beds-nav-tab beds-dropdown-toggle" id="toggle-nav-ptw" type="button">
+        📋 <span data-i18n="nav_work_auth">Work Authorisation (PTW)</span> <span class="beds-caret">▾</span>
+      </button>
+      <div class="beds-dropdown-menu" id="menu-nav-ptw">
+        <a class="beds-dropdown-item" data-target="view-ptw">
+          <span class="item-icon">📋</span>
+          <div class="item-text">
+            <strong data-i18n="nav_ptw_master">Master PTW Register</strong>
+            <small>Live active, verified & approved permits</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-permit-studio">
+          <span class="item-icon">📄</span>
+          <div class="item-text">
+            <strong data-i18n="nav_permit_studio">Controlled 7 Permit Forms Studio</strong>
+            <small>Official BALSONS branded A4 templates & generator</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-lifting">
+          <span class="item-icon">🏗️</span>
+          <div class="item-text">
+            <strong data-i18n="nav_lifting">Heavy Lifting & Rigging</strong>
+            <small>Tandem lifts, lift plans & crane safety</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-hira">
+          <span class="item-icon">📑</span>
+          <div class="item-text">
+            <strong data-i18n="nav_hira">HIRA & JSA Repository</strong>
+            <small>Method statements & risk assessments</small>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Group 3: Safety & Field Inspections Dropdown -->
+    <div class="beds-nav-dropdown">
+      <button class="beds-nav-tab beds-dropdown-toggle" id="toggle-nav-inspections" type="button">
+        🔍 <span data-i18n="nav_safety_inspections">Safety & Field Inspections</span> <span class="beds-caret">▾</span>
+      </button>
+      <div class="beds-dropdown-menu" id="menu-nav-inspections">
+        <a class="beds-dropdown-item" data-target="view-tbt">
+          <span class="item-icon">🗣️</span>
+          <div class="item-text">
+            <strong data-i18n="nav_tbt">Toolbox Talks (TBT)</strong>
+            <small>Daily pre-work briefings & attendance</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-inspections">
+          <span class="item-icon">🔍</span>
+          <div class="item-text">
+            <strong data-i18n="nav_inspections">Digital Safety Inspections</strong>
+            <small>Daily, weekly & equipment checklists</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-emergency">
+          <span class="item-icon">🧯</span>
+          <div class="item-text">
+            <strong data-i18n="nav_emergency">Emergency Readiness & Fire</strong>
+            <small>Evacuation drills, extinguishers & muster points</small>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Group 4: Hazards & Incidents Dropdown -->
+    <div class="beds-nav-dropdown">
+      <button class="beds-nav-tab beds-dropdown-toggle" id="toggle-nav-hazards" type="button">
+        ⚠️ <span data-i18n="nav_hazards_incidents">Hazards & Incidents</span> <span class="beds-caret">▾</span>
+      </button>
+      <div class="beds-dropdown-menu" id="menu-nav-hazards">
+        <a class="beds-dropdown-item" data-target="view-hazards">
+          <span class="item-icon">⚠️</span>
+          <div class="item-text">
+            <strong data-i18n="nav_hazards">Hazard Observations (UA/UC)</strong>
+            <small>Unsafe acts & unsafe conditions reporting</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-incidents">
+          <span class="item-icon">🚨</span>
+          <div class="item-text">
+            <strong data-i18n="nav_incidents">Incident & Near Miss Management</strong>
+            <small>Investigation, 5-Why analysis & lessons learned</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-capa">
+          <span class="item-icon">✅</span>
+          <div class="item-text">
+            <strong data-i18n="nav_capa">CAPA Register</strong>
+            <small>Corrective & preventive actions tracking</small>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Group 5: Manpower & Reports Dropdown -->
+    <div class="beds-nav-dropdown">
+      <button class="beds-nav-tab beds-dropdown-toggle" id="toggle-nav-manpower" type="button">
+        👷 <span data-i18n="nav_manpower_reports">Manpower & Reports</span> <span class="beds-caret">▾</span>
+      </button>
+      <div class="beds-dropdown-menu" id="menu-nav-manpower">
+        <a class="beds-dropdown-item" data-target="view-manpower">
+          <span class="item-icon">👷</span>
+          <div class="item-text">
+            <strong data-i18n="nav_manpower">Manpower Competency & Form 31</strong>
+            <small>Skill badges, medical fitness & inductions</small>
+          </div>
+        </a>
+        <a class="beds-dropdown-item" data-target="view-reports">
+          <span class="item-icon">📈</span>
+          <div class="item-text">
+            <strong data-i18n="nav_reports">Daily Safety Report (DSR)</strong>
+            <small>Automated daily HSE summaries & export</small>
+          </div>
+        </a>
+      </div>
+    </div>
   </nav>
 
   <!-- Main View Area -->
@@ -787,6 +961,44 @@
             <!-- Dynamically loaded -->
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 02-B: CONTROLLED 7 PERMIT FORMS STUDIO               -->
+    <!-- ======================================================== -->
+    <div id="view-permit-studio" class="beds-view-panel">
+      <!-- Studio Header / Action Toolbar -->
+      <div class="quick-action-bar" style="border-left: 4px solid var(--beds-teal-primary); background: var(--beds-bg-panel);">
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+          <div style="font-size: 14.5px; font-weight: 800; color: var(--beds-charcoal-heading);" data-i18n="studio_title">
+            BALSONS CONTROLLED PERMIT FORMS STUDIO (V1.1 LIBRARY)
+          </div>
+          <div style="font-size: 11.5px; color: var(--beds-text-secondary);" data-i18n="studio_sub">
+            Official 7 Controlled Work Permits for JTRWF Khordha Project · Standards Compliant Print & Digital Authorisation
+          </div>
+        </div>
+        <div class="action-btn-group">
+          <button class="beds-btn beds-btn-secondary" onclick="BalsonsSafetyApp.printStudioForm()" data-i18n="btn_print_form">
+            🖨️ Print Form (A4)
+          </button>
+          <button class="beds-btn beds-btn-secondary" onclick="window.print()" data-i18n="btn_export_pdf_blank">
+            📥 Export Printable PDF
+          </button>
+          <button class="beds-btn beds-btn-primary" onclick="BalsonsSafetyApp.initiatePermitFromStudio()" data-i18n="btn_fill_initiate">
+            ⚡ Fill & Initiate Digital PTW
+          </button>
+        </div>
+      </div>
+
+      <!-- 7 Permit Template Selector Pill Bar -->
+      <div id="permit-studio-selector" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; background: var(--beds-bg-panel); padding: 10px 14px; border: 1px solid var(--beds-border); border-radius: var(--beds-radius-md);">
+        <!-- Dynamically injected via BalsonsSafetyApp.renderPermitStudio() -->
+      </div>
+
+      <!-- Official A4 Form Sheet Container -->
+      <div id="studio-rendered-form" style="max-width: 920px; margin: 0 auto; box-shadow: 0 4px 24px rgba(0,0,0,0.12); border-radius: var(--beds-radius-md); overflow: hidden; background: #FFFFFF;">
+        <!-- Official BALSONS Branded Document Rendered Here -->
       </div>
     </div>
 
