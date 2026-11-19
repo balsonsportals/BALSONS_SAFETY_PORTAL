@@ -14,8 +14,8 @@ const BALSONS_SAFETY_CONFIG = {
   VERSION: '1.0.0-sam2026',
   ENV: 'production',
   
-  // Google Apps Script Web App Deployment URL (Updated upon clasp deployment)
-  APPS_SCRIPT_URL: '',
+  // Google Apps Script Web App Deployment URL
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw5yErhJIEatQ2JVQRVqHBvdQNeXwgiSCybqJZwuJPxqhEDbFK5EYcI5AdeNHXFojPhrA/exec',
   USE_TEXT_PLAIN_TRANSPORT: true,
 
   STORAGE_SESSION_KEY: 'balsons_safety_session',
