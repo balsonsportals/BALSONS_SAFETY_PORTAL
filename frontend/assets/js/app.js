@@ -213,6 +213,9 @@ const BalsonsSafetyApp = {
       case 'view-gate-clearance':
         this.verifyEmployeeForGate();
         break;
+      case 'view-dossier-360':
+        this.render360DossierPage();
+        break;
     }
 
     BalsonsSafetyI18n.applyTranslations();
@@ -1976,13 +1979,16 @@ const BalsonsSafetyApp = {
           </td>
           <td><span class="badge ${item.MedicalFitness.includes('FIT') ? 'badge-success' : 'badge-warning'}">${item.MedicalFitness}</span></td>
           <td>${clearanceBadge}</td>
-          <td style="text-align: right;">
+          <td style="text-align: right; white-space: nowrap;">
+            <button class="beds-btn beds-btn-sm beds-btn-secondary" onclick="BalsonsSafetyApp.open360Dossier('${item.EmployeeID}')" title="View 360° Unified Dossier">
+              📄 360 Dossier
+            </button>
             ${isInducted ? `
-              <button class="beds-btn beds-btn-sm beds-btn-primary" onclick="BalsonsSafetyApp.printSafetyPass('${item.EmployeeID}')" title="Print Safety Pass & Badge">
+              <button class="beds-btn beds-btn-sm beds-btn-primary" onclick="BalsonsSafetyApp.printSafetyPass('${item.EmployeeID}')" title="Print Safety Pass & Badge" style="margin-left: 4px;">
                 🖨️ Pass
               </button>
             ` : `
-              <button class="beds-btn beds-btn-sm beds-btn-warning" onclick="BalsonsSafetyApp.openInductionModal('${item.EmployeeID}')">
+              <button class="beds-btn beds-btn-sm beds-btn-warning" onclick="BalsonsSafetyApp.openInductionModal('${item.EmployeeID}')" style="margin-left: 4px;">
                 🛡️ Induct
               </button>
             `}
@@ -2247,4 +2253,23 @@ const BalsonsSafetyApp = {
     this.loadInductions();
   },
 
+  open360Dossier: function(empId) {
+    if (window.Balsons360Dossier) {
+      window.Balsons360Dossier.openModal(empId);
+    }
+  },
+
+  render360DossierPage: function(empId) {
+    const id = empId || 'EMP-2026-0001';
+    if (window.Balsons360Dossier) {
+      window.Balsons360Dossier.populateSelect('dossier-page-emp-select', id);
+      const container = document.getElementById('dossier-page-container');
+      if (container) {
+        container.innerHTML = window.Balsons360Dossier.renderCard(id);
+      }
+    }
+  }
+
 };
+
+window.BalsonsSafetyApp = BalsonsSafetyApp;

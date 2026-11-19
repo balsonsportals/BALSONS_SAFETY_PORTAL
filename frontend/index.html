@@ -1048,6 +1048,13 @@
             <small>Tri-portal live link (HR + Safety + Gate Entry)</small>
           </div>
         </a>
+        <a class="beds-dropdown-item" data-target="view-dossier-360">
+          <span class="item-icon">📄</span>
+          <div class="item-text">
+            <strong>360° Workforce Dossier</strong>
+            <small>Unified cross-portal master personnel record</small>
+          </div>
+        </a>
         <a class="beds-dropdown-item" data-target="view-manpower">
           <span class="item-icon">👷</span>
           <div class="item-text">
@@ -1789,6 +1796,31 @@
       </div>
     </div>
 
+    <!-- MODULE 12: 360° WORKFORCE DOSSIER -->
+    <div id="view-dossier-360" class="beds-view-panel">
+      <div class="quick-action-bar" style="border-left: 4px solid #0097B2; background: var(--beds-bg-panel); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+        <div>
+          <div style="font-size: 14.5px; font-weight: 800; color: var(--beds-charcoal-heading);">
+            📄 360° WORKFORCE & SITE ACCESS MASTER DOSSIER
+          </div>
+          <div style="font-size: 11.5px; color: var(--beds-text-secondary);">
+            Unified Cross-Portal Record: BALSONS HR Manager (Identity & KYC) ↔ Safety Manager (Induction & PTW) ↔ Gate Entry Manager (Access)
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="dossier-page-emp-select" class="beds-select" style="font-size: 12px; padding: 6px 10px; font-weight: 700;" onchange="BalsonsSafetyApp.render360DossierPage(this.value)">
+            <!-- Options populated dynamically -->
+          </select>
+          <button class="beds-btn beds-btn-primary" onclick="window.print()">
+            🖨️ Print Full Dossier (A4)
+          </button>
+        </div>
+      </div>
+      <div id="dossier-page-container">
+        <!-- Rendered 360 Dossier Sheet -->
+      </div>
+    </div>
+
   </main>
 
   <!-- ======================================================== -->
@@ -1983,6 +2015,7 @@
   <script src="assets/js/translations.js"></script>
   <script src="assets/js/api-client.js"></script>
   <script src="assets/js/docx-forms-data.js"></script>
+  <script src="assets/js/dossier-360.js"></script>
   <script src="assets/js/app.js"></script>
   <!-- Modal 6: Conduct Safety Induction -->
   <div class="beds-modal-overlay" id="modal-induction-create">
