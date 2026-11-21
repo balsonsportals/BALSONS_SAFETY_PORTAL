@@ -63,9 +63,13 @@ function doPost(e) {
         break;
 
       case 'db.init':
-        var initResult = initSafetyDatabase(payload.spreadsheetId);
-        responseData = { message: initResult };
-        break;
+        return createJsonResponse({
+          success: false,
+          status: 403,
+          requestId: requestId,
+          action: action,
+          error: { code: 'ROUTE_DISABLED', message: 'Database initialization via public web API is disabled for security. Execute manually from Apps Script IDE.' }
+        });
 
       case 'auth.login':
         responseData = AuthService.login(payload.username, payload.password);
