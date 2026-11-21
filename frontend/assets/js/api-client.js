@@ -347,36 +347,55 @@ const BalsonsSafetyApi = {
     ]
   },
 
-  /**
-   * Universal Dispatch Call
-   */
-  call: async function(action, payload = {}) {
-    const actor = BalsonsSafetyAuth.getUser();
+  // In-flight request registry for duplicate protection (V5.0 Hardened)
+  _inFlight: new Map(),
 
-    // If online GAS URL is configured, try network call with timeout
-    if (BALSONS_SAFETY_CONFIG.APPS_SCRIPT_URL) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
-        const response = await fetch(BALSONS_SAFETY_CONFIG.APPS_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: action, payload: payload, actor: actor }),
-          signal: controller.signal,
-          redirect: 'follow'
-        });
-        clearTimeout(timeoutId);
-        if (response.ok) {
-          const res = await response.json();
-          if (res.success) return res;
-        }
-      } catch (e) {
-        // Fallback to local dispatch
-      }
+  /**
+   * Universal Dispatch Call (V5.0 Hardened: AbortController 10s timeout & deduplication)
+   */
+  call: async function(action, payload = {}, timeoutMs = 10000) {
+    const actor = (typeof BalsonsSafetyAuth !== 'undefined' && BalsonsSafetyAuth.getUser) ? BalsonsSafetyAuth.getUser() : null;
+    const dedupeKey = `${action}:${JSON.stringify(payload)}`;
+
+    if (this._inFlight.has(dedupeKey)) {
+      console.warn(`[BalsonsSafetyApi] In-flight request for '${action}' already in progress. Reusing promise.`);
+      return this._inFlight.get(dedupeKey);
     }
 
-    // Local Fallback Handler
-    return this._localDispatch(action, payload, actor);
+    const requestPromise = (async () => {
+      // If online GAS URL is configured, try network call with timeout
+      if (BALSONS_SAFETY_CONFIG.APPS_SCRIPT_URL) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const response = await fetch(BALSONS_SAFETY_CONFIG.APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: action, payload: payload, actor: actor }),
+            signal: controller.signal,
+            redirect: 'follow'
+          });
+          clearTimeout(timeoutId);
+          if (response.ok) {
+            const res = await response.json();
+            if (res.success) return res;
+          }
+        } catch (e) {
+          clearTimeout(timeoutId);
+          console.warn(`[BalsonsSafetyApi] Network call fallback to local dispatch (${action}):`, e.message);
+        }
+      }
+
+      // Local Fallback Handler
+      return this._localDispatch(action, payload, actor);
+    })();
+
+    this._inFlight.set(dedupeKey, requestPromise);
+    try {
+      return await requestPromise;
+    } finally {
+      this._inFlight.delete(dedupeKey);
+    }
   },
 
   _localDispatch: function(action, payload, actor) {
