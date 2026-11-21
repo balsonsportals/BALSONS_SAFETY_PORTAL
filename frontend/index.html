@@ -903,6 +903,7 @@
       <div class="brand-titles">
         <h1 data-i18n="portal_title">BALSONS SAFETY PORTAL</h1>
         <p data-i18n="portal_sub">JTRWF Khordha Project · Work Authorisation System</p>
+        <div style="font-size: 10px; font-style: italic; color: var(--beds-teal-primary); font-weight: 600; margin-top: 1px;">“Difficult We Do Easily, Impossible Takes Little Time...!”</div>
       </div>
     </div>
 
@@ -1996,10 +1997,19 @@
 
   <!-- Modal 5: Login / Switch User -->
   <div class="beds-modal-overlay" id="modal-login">
-    <div class="beds-modal-dialog" style="max-width: 420px;">
-      <div class="beds-modal-header">
-        <h3 class="beds-modal-title">Switch User Account</h3>
+    <div class="beds-modal-dialog" style="max-width: 440px;">
+      <div class="beds-modal-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <img src="assets/images/balsons-logo.png" onerror="this.onerror=null; this.src='https://lh3.googleusercontent.com/d/1HB7sGaQ4f2qq0NNzgBQrSpUe2DJWV4uh'" alt="BALSONS Logo" style="height: 36px; width: auto; object-fit: contain;">
+          <div>
+            <h3 class="beds-modal-title" style="margin: 0; font-size: 14px; font-weight: 800;">BALSONS Safety Portal</h3>
+            <div style="font-size: 10px; font-style: italic; color: var(--beds-teal-primary); font-weight: 600;">“Difficult We Do Easily, Impossible Takes Little Time...!”</div>
+          </div>
+        </div>
         <button class="beds-modal-close btn-modal-cancel">&times;</button>
+      </div>
+      <div style="background: rgba(0, 151, 178, 0.08); padding: 6px 16px; border-bottom: 1px solid var(--beds-border); font-size: 10.5px; color: var(--beds-teal-primary); font-weight: 700;">
+        Secure Login | Authorized Access Only • PRJ-JTRWF-SCHULER
       </div>
       <form id="form-login">
         <div class="beds-modal-body">
@@ -2127,6 +2137,7 @@
   <script src="assets/js/docx-forms-data.js"></script>
   <script src="assets/js/dossier-360.js"></script>
   <script src="assets/js/beds-superadmin.js"></script>
+  <script src="assets/js/beds-portal-login.js"></script>
   <script src="assets/js/beds-workspace.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
