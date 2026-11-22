@@ -47,3 +47,8 @@ build/
 *.tmp
 *.bak
 *.log
+~$*
+desktop.ini
+Desktop.ini
+scratch/
+tests/fixtures/
